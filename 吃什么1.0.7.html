@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>标准塔罗牌测今日增运食材 | 仅供娱乐</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap');
+        
+        * {
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+        
+        /* 玄学测算特效遮罩 */
+        .fortune-overlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.95) 100%);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        
+        .fortune-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .bagua {
+            width: 300px;
+            height: 300px;
+            background: url('https://img.icons8.com/fluency/300/000000/bagua.png') center/contain no-repeat;
+            animation: baguaRotate 4s linear infinite;
+            filter: drop-shadow(0 0 30px rgba(102, 126, 234, 0.8));
+        }
+        
+        @keyframes baguaRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .meteor {
+            position: absolute;
+            width: 3px;
+            height: 120px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1));
+            animation: meteorFall 2s linear infinite;
+            filter: blur(1px);
+        }
+        
+        @keyframes meteorFall {
+            0% {
+                transform: translateY(-150px) translateX(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(120vh) translateX(300px);
+                opacity: 0;
+            }
+        }
+        
+        /* 金光闪烁特效 */
+        .golden-flash {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle, rgba(255,215,0,0.6) 0%, rgba(255,215,0,0.2) 50%, transparent 100%);
+            z-index: 9998;
+            opacity: 0;
+            pointer-events: none;
+            animation: goldenFlash 3s ease-in-out forwards;
+        }
+        
+        @keyframes goldenFlash {
+            0% { opacity: 0; }
+            20% { opacity: 1; }
+            40% { opacity: 0.7; }
+            60% { opacity: 1; }
+            80% { opacity: 0.5; }
+            100% { opacity: 0; }
+        }
+        
+        /* 运气+1特效 */
+        .luck-plus {
+            position: fixed;
+            font-size: 28px;
+            font-weight: 900;
+            color: #fbbf24;
+            pointer-events: none;
+            animation: luckFloat 2s ease-out forwards;
+            z-index: 9999;
+            text-shadow: 0 0 15px rgba(251, 191, 36, 0.8);
+        }
+        
+        @keyframes luckFloat {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            50% { transform: translateY(-60px) scale(1.3); opacity: 1; }
+            100% { transform: translateY(-150px) scale(0.9); opacity: 0; }
+        }
+        
+        /* 塔罗牌样式 */
+        .tarot-card {
+            perspective: 1000px;
+            cursor: pointer;
+            height: 190px;
+            transition: all 0.3s ease;
+        }
+        
+        .tarot-card:hover:not(.disabled) {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+        
+        .tarot-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.8s;
+            transform-style: preserve-3d;
+        }
+        
+        .tarot-card.flipped .tarot-card-inner {
+            transform: rotateY(180deg);
+        }
+        
+        .tarot-card.reversed .tarot-card-inner {
+            transform: rotateY(180deg) rotate(180deg);
+        }
+        
+        .tarot-card-front, .tarot-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .tarot-card-back {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 48px;
+        }
+        
+        .tarot-card-front {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            transform: rotateY(180deg);
+        }
+        
+        .tarot-card.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        .reversed-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #ef4444;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        /* 洗牌动画 */
+        .shuffle-animation {
+            animation: shuffle 0.5s ease-in-out 3;
+        }
+        
+        @keyframes shuffle {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px) rotate(-2deg); }
+            75% { transform: translateX(10px) rotate(2deg); }
+            100% { transform: translateX(0); }
+        }
+        
+        /* 切牌动画 */
+        .cut-animation {
+            animation: cut 1s ease-in-out forwards;
+        }
+        
+        @keyframes cut {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-50px); }
+            100% { transform: translateY(0); }
+        }
+        
+        .selected-cards {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .selected-card {
+            width: 120px;
+            height: 180px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 10px 25px rgba(79, 172, 254, 0.4);
+            position: relative;
+        }
+        
+        .topic-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .topic-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(240, 147, 251, 0.4);
+        }
+        
+        .topic-btn.active {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .spread-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .spread-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(79, 172, 254, 0.4);
+        }
+        
+        .spread-btn.active {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .fortune-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .ingredient-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .ingredient-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(240, 147, 251, 0.4);
+        }
+        
+        .staple-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #fbbf24;
+            color: #78350f;
+            font-size: 12px;
+            font-weight: 900;
+            padding: 2px 8px;
+            border-radius: 999px;
+            box-shadow: 0 2px 8px rgba(251, 191, 36, 0.6);
+        }
+        
+        .analysis-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            animation: analysisAppear 0.5s ease forwards;
+            opacity: 0;
+        }
+        
+        @keyframes analysisAppear {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .step-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .step-dot.active {
+            background: #fbbf24;
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+        }
+
+        /* 修复洗牌环节布局：牌与按钮分离 */
+        #deckContainer {
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        /* 抽牌环节平铺网格布局 */
+        #tarotFan {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 16px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-900 via-indigo-900 to-black min-h-screen">
+    <!-- 玄学测算特效遮罩 -->
+    <div id="fortuneOverlay" class="fortune-overlay">
+        <div class="bagua"></div>
+        <div id="meteorContainer"></div>
+    </div>
+    
+    <div class="container mx-auto px-4 py-12 max-w-6xl">
+        <!-- 主标题加仅供娱乐小字 -->
+        <h1 class="text-4xl md:text-5xl font-black text-center text-white mb-2">🔮 标准塔罗牌测今日增运食材</h1>
+        <p class="text-center text-purple-300 text-lg mb-4">⚠️ 仅供娱乐，非专业占卜，请勿当真</p>
+        <p class="text-center text-purple-200 mb-12 text-lg">遵循78张标准塔罗牌规则，解锁你的潜意识能量与专属增运美食 ✨</p>
+        
+        <!-- 步骤指示器 -->
+        <div class="step-indicator mb-8">
+            <div class="step-dot active" id="step1"></div>
+            <div class="step-dot" id="step2"></div>
+            <div class="step-dot" id="step3"></div>
+            <div class="step-dot" id="step4"></div>
+            <div class="step-dot" id="step5"></div>
+        </div>
+        
+        <!-- 步骤1：选择占卜方向与问题 -->
+        <div id="step1Area" class="fortune-card rounded-2xl shadow-2xl p-8 mb-12 text-white">
+            <h3 class="text-2xl font-bold mb-6 text-center">🎯 第一步：选择占卜方向与问题</h3>
+            
+            <!-- 占卜方向选择 -->
+            <div class="mb-8">
+                <h4 class="text-xl font-bold mb-4 text-center">选择占卜方向</h4>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                    <button class="topic-btn bg-white/20 rounded-xl p-4 text-center font-bold" data-topic="career">
+                        <div class="text-3xl mb-2">💼</div>
+                        <div>事业与职业</div>
+                    </button>
+                    <button class="topic-btn bg-white/20 rounded-xl p-4 text-center font-bold" data-topic="love">
+                        <div class="text-3xl mb-2">💕</div>
+                        <div>爱情与关系</div>
+                    </button>
+                    <button class="topic-btn bg-white/20 rounded-xl p-4 text-center font-bold" data-topic="health">
+                        <div class="text-3xl mb-2">💪</div>
+                        <div>健康与身心</div>
+                    </button>
+                    <button class="topic-btn bg-white/20 rounded-xl p-4 text-center font-bold" data-topic="social">
+                        <div class="text-3xl mb-2">👥</div>
+                        <div>人际关系</div>
+                    </button>
+                    <button class="topic-btn bg-white/20 rounded-xl p-4 text-center font-bold" data-topic="wealth">
+                        <div class="text-3xl mb-2">💰</div>
+                        <div>财富运势</div>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 问题输入 -->
+            <div class="mb-8">
+                <h4 class="text-xl font-bold mb-4 text-center">明确你的问题（1-3个月内）</h4>
+                <div class="bg-white/20 rounded-xl p-6 mb-4">
+                    <p class="text-purple-200 mb-3">✅ 好问题：具体、有针对性、有时间范围</p>
+                    <p class="text-purple-200 mb-3">❌ 坏问题：过于宽泛、没有时间限制、涉及他人隐私</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <button class="question-template bg-white/10 rounded-xl p-3 text-left hover:bg-white/20 transition" data-question="我这个月的工作运势如何？">
+                        💼 我这个月的工作运势如何？
+                    </button>
+                    <button class="question-template bg-white/10 rounded-xl p-3 text-left hover:bg-white/20 transition" data-question="我和TA的关系这个月会有什么发展？">
+                        💕 我和TA的关系这个月会有什么发展？
+                    </button>
+                    <button class="question-template bg-white/10 rounded-xl p-3 text-left hover:bg-white/20 transition" data-question="我这个月的身体健康需要注意什么？">
+                        💪 我这个月的身体健康需要注意什么？
+                    </button>
+                    <button class="question-template bg-white/10 rounded-xl p-3 text-left hover:bg-white/20 transition" data-question="我这个月的财运如何？">
+                        💰 我这个月的财运如何？
+                    </button>
+                </div>
+                <textarea id="userQuestion" class="w-full px-4 py-3 rounded-xl text-gray-800 text-lg focus:outline-none focus:ring-4 focus:ring-purple-400" rows="2" placeholder="或者输入你自己的问题..."></textarea>
+            </div>
+            
+            <!-- 牌阵选择 -->
+            <div class="mb-8">
+                <h4 class="text-xl font-bold mb-4 text-center">选择牌阵</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button class="spread-btn bg-white/20 rounded-xl p-4 text-center font-bold active" data-spread="single">
+                        <div class="text-3xl mb-2">🃏</div>
+                        <div class="text-lg">单牌占卜</div>
+                        <div class="text-sm text-purple-200 mt-1">快速决策/每日运势</div>
+                    </button>
+                    <button class="spread-btn bg-white/20 rounded-xl p-4 text-center font-bold" data-spread="triangle">
+                        <div class="text-3xl mb-2">🔺</div>
+                        <div class="text-lg">圣三角牌阵</div>
+                        <div class="text-sm text-purple-200 mt-1">过去-现在-未来</div>
+                    </button>
+                    <button class="spread-btn bg-white/20 rounded-xl p-4 text-center font-bold" data-spread="celtic">
+                        <div class="text-3xl mb-2">🔯</div>
+                        <div class="text-lg">凯尔特十字</div>
+                        <div class="text-sm text-purple-200 mt-1">复杂问题全面分析</div>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <button id="nextStep1Btn" class="px-8 py-3 bg-white text-purple-700 font-bold rounded-xl hover:bg-purple-100 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    下一步：开始洗牌 →
+                </button>
+            </div>
+        </div>
+        
+        <!-- 步骤2：洗牌与切牌（修复后布局：牌在上，按钮在下） -->
+        <div id="step2Area" class="fortune-card rounded-2xl shadow-2xl p-8 mb-12 text-white hidden">
+            <h3 class="text-2xl font-bold mb-6 text-center">🌀 第二步：洗牌与切牌</h3>
+            
+            <div class="bg-white/20 rounded-xl p-6 mb-8 text-center">
+                <p class="mb-3">请静下心来，默念你的问题：</p>
+                <p class="text-xl font-bold text-yellow-300" id="displayQuestion"></p>
+            </div>
+            
+            <!-- 牌单独放在上方区域 -->
+            <div id="deckContainer">
+                <div class="tarot-card-back rounded-xl w-32 h-48 flex items-center justify-center text-6xl mx-auto" id="deck">
+                    🎴
+                </div>
+            </div>
+            
+            <!-- 按钮和提示单独放在下方区域 -->
+            <div class="text-center">
+                <button id="shuffleBtn" class="px-8 py-3 bg-white text-purple-700 font-bold rounded-xl hover:bg-purple-100 transition shadow-lg mb-4">
+                    🌀 点击洗牌
+                </button>
+                <p class="text-purple-200" id="shuffleHint">点击按钮开始洗牌，让能量与牌连接</p>
+            </div>
+        </div>
+        
+        <!-- 步骤3：抽牌（改为平铺网格布局） -->
+        <div id="step3Area" class="fortune-card rounded-2xl shadow-2xl p-8 mb-12 text-white hidden">
+            <h3 class="text-2xl font-bold mb-6 text-center">🎴 第三步：抽取塔罗牌</h3>
+            
+            <div class="bg-white/20 rounded-xl p-6 mb-8 text-center">
+                <p class="text-xl font-bold" id="drawHint">请凭直觉抽取 <span id="cardsNeeded">1</span> 张牌</p>
+            </div>
+            
+            <!-- 平铺式塔罗牌网格 -->
+            <div id="tarotFan" class="mb-8">
+                <!-- 塔罗牌将通过JS动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 步骤4：牌阵解读（新增明确好坏方向+建议） -->
+        <div id="step4Area" class="fortune-card rounded-2xl shadow-2xl p-8 mb-12 text-white hidden">
+            <h3 class="text-2xl font-bold mb-6 text-center">📜 第四步：牌阵解读</h3>
+            
+            <!-- 已选牌展示 -->
+            <div id="selectedCardsSection" class="mb-8">
+                <div class="selected-cards" id="selectedCardsContainer">
+                    <!-- 已选牌将在这里显示 -->
+                </div>
+            </div>
+            
+            <!-- 牌阵详细解读 -->
+            <div id="spreadInterpretation" class="bg-white/20 rounded-xl p-6 mb-8">
+                <!-- 解读内容将在这里显示 -->
+            </div>
+            
+            <div class="text-center">
+                <button id="nextStep4Btn" class="px-8 py-3 bg-white text-purple-700 font-bold rounded-xl hover:bg-purple-100 transition shadow-lg">
+                    下一步：获取增运食材 →
+                </button>
+            </div>
+        </div>
+        
+        <!-- 步骤5：增运食材推荐 -->
+        <div id="step5Area" class="hidden">
+            <!-- 命理信息突出显示区域 -->
+            <div class="fortune-card rounded-2xl shadow-2xl p-8 mb-12 text-white">
+                <div class="text-center mb-8">
+                    <h3 class="text-3xl font-black mb-6">✨ 你的今日能量解读</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                        <div class="bg-white/20 rounded-xl p-4">
+                            <div class="text-purple-200 text-sm mb-1">综合五行</div>
+                            <div id="userElement" class="text-4xl font-black text-yellow-300"></div>
+                        </div>
+                        <div class="bg-white/20 rounded-xl p-4">
+                            <div class="text-purple-200 text-sm mb-1">今日宜补</div>
+                            <div id="lackElement" class="text-4xl font-black text-green-300"></div>
+                        </div>
+                        <div class="bg-white/20 rounded-xl p-4">
+                            <div class="text-purple-200 text-sm mb-1">今日运势</div>
+                            <div id="fortuneLevel" class="text-4xl font-black text-pink-300"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-white/10 rounded-xl p-6">
+                        <p class="text-purple-200 mb-2">幸运颜色：<span id="luckyColor" class="text-white font-bold text-lg"></span></p>
+                        <p class="text-purple-200 mb-2">幸运数字：<span id="luckyNumber" class="text-white font-bold text-lg"></span></p>
+                    </div>
+                    <div class="bg-white/10 rounded-xl p-6">
+                        <p class="text-purple-200 mb-2">占卜方向：<span id="selectedTopic" class="text-white font-bold text-lg"></span></p>
+                        <p class="text-purple-200 mb-2">最佳食用时间：<span id="bestTime" class="text-white font-bold text-lg"></span></p>
+                    </div>
+                </div>
+                
+                <div class="text-center mb-8">
+                    <button id="recalculateBtn" class="px-8 py-3 bg-white text-purple-700 font-bold rounded-xl hover:bg-purple-100 transition shadow-lg">
+                        🔄 重新占卜测算
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 今日幸运食材区域 -->
+            <div id="luckyIngredientsArea" class="mb-12">
+                <h3 class="text-3xl font-black text-center text-white mb-8">🌟 今日6种增运食材</h3>
+                <p class="text-center text-purple-200 mb-6">⭐ 黄色标记为今日推荐主食 | 点击食材查看详细能量分析</p>
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-12">
+                    <div class="ingredient-card rounded-xl p-6 text-center text-white relative" onclick="showAnalysis(0)">
+                        <div class="staple-badge hidden" id="stapleBadge1">主食</div>
+                        <div class="text-4xl mb-2" id="ingredientIcon1">🥬</div>
+                        <div class="text-xl font-bold" id="ingredientName1">菠菜</div>
+                        <div class="text-sm text-pink-100" id="ingredientElement1">属木</div>
+                    </div>
+                    <div class="ingredient-card rounded-xl p-6 text-center text-white relative" onclick="showAnalysis(1)">
+                        <div class="staple-badge hidden" id="stapleBadge2">主食</div>
+                        <div class="text-4xl mb-2" id="ingredientIcon2">🍅</div>
+                        <div class="text-xl font-bold" id="ingredientName2">番茄</div>
+                        <div class="text-sm text-pink-100" id="ingredientElement2">属火</div>
+                    </div>
+                    <div class="ingredient-card rounded-xl p-6 text-center text-white relative" onclick="showAnalysis(2)">
+                        <div class="staple-badge hidden" id="stapleBadge3">主食</div>
+                        <div class="text-4xl mb-2" id="ingredientIcon3">🌽</div>
+                        <div class="text-xl font-bold" id="ingredientName3">玉米</div>
+                        <div class="text-sm text-pink-100" id="ingredientElement3">属土</div>
+                    </div>
+                    <div class="ingredient-card rounded-xl p-6 text-center text-white relative" onclick="showAnalysis(3)">
+                        <div class="staple-badge hidden" id="stapleBadge4">主食</div>
+                        <div class="text-4xl mb-2" id="ingredientIcon4">🥚</div>
+                        <div class="text-xl font-bold" id="ingredientName4">鸡蛋</div>
+                        <div class="text-sm text-pink-100" id="ingredientElement4">属金</div>
+                    </div>
+                    <div class="ingredient-card rounded-xl p-6 text-center text-white relative" onclick="showAnalysis(4)">
+                        <div class="staple-badge hidden" id="stapleBadge5">主食</div>
+                        <div class="text-4xl mb-2" id="ingredientIcon5">🫘</div>
+                        <div class="text-xl font-bold" id="ingredientName5">黑豆</div>
+                        <div class="text-sm text-pink-100" id="ingredientElement5">属水</div>
+                    </div>
+                    <div class="ingredient-card rounded-xl p-6 text-center text-white relative" onclick="showAnalysis(5)">
+                        <div class="staple-badge hidden" id="stapleBadge6">主食</div>
+                        <div class="text-4xl mb-2" id="ingredientIcon6">🍚</div>
+                        <div class="text-xl font-bold" id="ingredientName6">大米</div>
+                        <div class="text-sm text-pink-100" id="ingredientElement6">属金</div>
+                    </div>
+                </div>
+                
+                <!-- 食材详细分析区域 -->
+                <div id="analysisArea" class="hidden">
+                    <h3 class="text-2xl font-black text-center text-white mb-6">📜 食材能量分析</h3>
+                    <div id="analysisContent" class="analysis-card rounded-2xl shadow-2xl p-6 text-white">
+                        <!-- 分析内容将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // 占卜方向中文名称映射
+        const topicNames = {
+            "career": "事业与职业",
+            "love": "爱情与关系",
+            "health": "健康与身心",
+            "social": "人际关系",
+            "wealth": "财富运势"
+        };
+        
+        // 牌阵信息
+        const spreads = {
+            "single": { name: "单牌占卜", cards: 1, positions: ["今日指引"] },
+            "triangle": { name: "圣三角牌阵", cards: 3, positions: ["过去", "现在", "未来"] },
+            "celtic": { name: "凯尔特十字", cards: 10, positions: ["现状", "挑战", "潜在基础", "过去", "未来", "自我", "环境", "外界态度", "希望与恐惧", "最终结果"] }
+        };
+        
+        // 完整78张塔罗牌数据（大阿卡那22张+小阿卡那56张）
+        const tarotCards = [
+            // 大阿卡那 (22张)
+            { id: 0, name: "愚者", icon: "🃏", element: "木", 
+              upright: "冒险、新开始、天真、自由", reversed: "鲁莽、不负责任、冲动、盲目",
+              career: "适合尝试新机会，大胆创新", love: "轻松自由的恋情开始", health: "保持轻松心态，多外出", social: "认识新朋友的好时机", wealth: "意外小收获" },
+            { id: 1, name: "魔术师", icon: "🎩", element: "金",
+              upright: "创造、沟通、智慧、技能", reversed: "欺骗、操纵、缺乏自信",
+              career: "发挥创造力，展示技能", love: "主动沟通，感情进展", health: "注意呼吸系统", social: "口才赢得好感", wealth: "通过技能获利" },
+            { id: 2, name: "女祭司", icon: "👩‍🦰", element: "水",
+              upright: "直觉、神秘、内在智慧、冷静", reversed: "隐藏的秘密、直觉失灵、冷漠",
+              career: "相信直觉，不要盲目", love: "关注内心感受", health: "内分泌健康", social: "保持适当距离", wealth: "保守投资" },
+            { id: 3, name: "女皇", icon: "👑", element: "土",
+              upright: "丰收、母性、富足、创造力", reversed: "依赖、过度保护、懒惰",
+              career: "工作成果丰硕", love: "感情稳定，适合婚嫁", health: "饮食与皮肤", social: "人际关系和谐", wealth: "财运亨通" },
+            { id: 4, name: "皇帝", icon: "🤴", element: "火",
+              upright: "权威、秩序、领导、稳定", reversed: "独裁、控制欲强、固执",
+              career: "适合领导角色", love: "感情需要理性", health: "心脏与血压", social: "保持权威", wealth: "努力获得财富" },
+            { id: 5, name: "教皇", icon: "🧙", element: "土",
+              upright: "信仰、传统、指导、学习", reversed: "叛逆、打破传统、误导",
+              career: "向有经验的人请教", love: "传统恋爱方式", health: "传统养生", social: "正式社交活动", wealth: "稳健投资" },
+            { id: 6, name: "恋人", icon: "💑", element: "火",
+              upright: "爱情、选择、和谐、关系", reversed: "分手、错误选择、不和",
+              career: "重要职业选择", love: "爱情运势佳", health: "保持心情愉悦", social: "有贵人相助", wealth: "合作带来财富" },
+            { id: 7, name: "战车", icon: "🏎️", element: "金",
+              upright: "胜利、意志、控制、成功", reversed: "失败、失控、冲动",
+              career: "坚持就能胜利", love: "主动掌控感情", health: "交通安全", social: "展现自信", wealth: "竞争获利" },
+            { id: 8, name: "力量", icon: "🦁", element: "火",
+              upright: "勇气、耐心、内在力量、温柔", reversed: "软弱、暴躁、缺乏自信",
+              career: "用耐心克服困难", love: "温柔更有力量", health: "注意肝火", social: "温和解决冲突", wealth: "长期投资回报" },
+            { id: 9, name: "隐士", icon: "🧓", element: "土",
+              upright: "内省、智慧、孤独、寻找", reversed: "孤立、逃避、迷茫",
+              career: "适合独立工作", love: "需要独处反思", health: "注意休息", social: "减少社交", wealth: "保守理财" },
+            { id: 10, name: "命运之轮", icon: "🎡", element: "水",
+              upright: "转变、机遇、循环、好运", reversed: "厄运、阻碍、停滞",
+              career: "事业迎来转机", love: "感情新变化", health: "身体好转", social: "遇到意外的人", wealth: "财运起伏" },
+            { id: 11, name: "正义", icon: "⚖️", element: "金",
+              upright: "公平、公正、因果、责任", reversed: "不公、逃避责任、不诚实",
+              career: "努力得到公正回报", love: "感情需要诚实", health: "平衡生活方式", social: "待人公正", wealth: "正当收入" },
+            { id: 12, name: "倒吊人", icon: "🙃", element: "水",
+              upright: "牺牲、等待、换角度、放下", reversed: "无谓牺牲、固执、抗拒",
+              career: "换角度看问题，等待时机", love: "感情需要付出", health: "血液循环", social: "换位思考", wealth: "暂时不要投资" },
+            { id: 13, name: "死神", icon: "💀", element: "水",
+              upright: "结束、转变、新生、放下", reversed: "抗拒改变、停滞、旧事物",
+              career: "旧工作结束，新开始", love: "感情结束，新开始", health: "身体大转变", social: "告别旧关系", wealth: "旧财去新财来" },
+            { id: 14, name: "节制", icon: "🍷", element: "火",
+              upright: "平衡、调和、耐心、适度", reversed: "失衡、过度、缺乏耐心",
+              career: "工作生活平衡", love: "感情慢慢调和", health: "饮食平衡", social: "保持中庸", wealth: "分散投资" },
+            { id: 15, name: "恶魔", icon: "😈", element: "火",
+              upright: "欲望、束缚、诱惑、物质", reversed: "解脱、摆脱束缚、觉醒",
+              career: "警惕工作中的诱惑", love: "不健康的关系", health: "成瘾问题", social: "远离不良圈子", wealth: "警惕高风险投资" },
+            { id: 16, name: "塔", icon: "🗼", element: "金",
+              upright: "突变、破坏、觉醒、释放", reversed: "逃避灾难、恐惧改变",
+              career: "突发工作变动", love: "感情突然破裂", health: "突发健康问题", social: "人际关系突变", wealth: "突发财务损失" },
+            { id: 17, name: "星星", icon: "⭐", element: "水",
+              upright: "希望、灵感、平静、治愈", reversed: "失望、缺乏信心、迷茫",
+              career: "工作有新希望", love: "感情充满希望", health: "身心平静", social: "遇到志同道合的人", wealth: "财运逐渐好转" },
+            { id: 18, name: "月亮", icon: "🌙", element: "水",
+              upright: "幻觉、恐惧、潜意识、不安", reversed: "真相大白、摆脱恐惧",
+              career: "工作中有隐藏问题", love: "感情中有欺骗", health: "睡眠与精神", social: "警惕小人", wealth: "财运不明朗" },
+            { id: 19, name: "太阳", icon: "☀️", element: "火",
+              upright: "快乐、成功、活力、积极", reversed: "失败、消沉、活力不足",
+              career: "事业成功", love: "感情甜蜜", health: "身体健康", social: "人际关系极佳", wealth: "财运旺盛" },
+            { id: 20, name: "审判", icon: "📯", element: "金",
+              upright: "觉醒、重生、决断、召唤", reversed: "拖延、逃避、后悔",
+              career: "重要职业决断", love: "感情重新开始", health: "身体重获健康", social: "人际关系新开始", wealth: "财运大转变" },
+            { id: 21, name: "世界", icon: "🌍", element: "土",
+              upright: "完成、圆满、整合、成功", reversed: "未完成、失败、不完美",
+              career: "工作圆满完成", love: "感情修成正果", health: "身体状态极佳", social: "人际关系圆满", wealth: "财运亨通" },
+            
+            // 小阿卡那 - 权杖(火元素) 14张
+            { id: 22, name: "权杖一", icon: "🔥", element: "火",
+              upright: "新行动、创造、灵感、开始", reversed: "延迟、缺乏动力、失败",
+              career: "新项目开始", love: "新恋情萌芽", health: "精力充沛", social: "新社交机会", wealth: "新财源" },
+            { id: 23, name: "权杖二", icon: "🔥", element: "火",
+              upright: "决策、计划、掌控、远见", reversed: "犹豫、缺乏计划、失控",
+              career: "需要做决策", love: "感情需要规划", health: "注意平衡", social: "掌控社交节奏", wealth: "规划财务" },
+            { id: 24, name: "权杖三", icon: "🔥", element: "火",
+              upright: "远见、探索、合作、进展", reversed: "阻碍、延迟、目光短浅",
+              career: "事业有进展", love: "感情发展顺利", health: "身体恢复", social: "合作顺利", wealth: "投资有回报" },
+            { id: 25, name: "权杖四", icon: "🔥", element: "火",
+              upright: "稳定、庆祝、和谐、家庭", reversed: "不稳定、冲突、搬家",
+              career: "工作稳定", love: "感情稳定，适合结婚", health: "身体健康", social: "家庭聚会", wealth: "财务稳定" },
+            { id: 26, name: "权杖五", icon: "🔥", element: "火",
+              upright: "竞争、冲突、挑战、分歧", reversed: "和解、避免冲突、妥协",
+              career: "工作竞争激烈", love: "感情有矛盾", health: "注意压力", social: "人际关系紧张", wealth: "财务竞争" },
+            { id: 27, name: "权杖六", icon: "🔥", element: "火",
+              upright: "胜利、成功、荣誉、自信", reversed: "失败、骄傲、挫折",
+              career: "工作取得成功", love: "感情顺利", health: "身体康复", social: "受人尊敬", wealth: "财运好" },
+            { id: 28, name: "权杖七", icon: "🔥", element: "火",
+              upright: "挑战、坚持、防御、勇气", reversed: "放弃、被击败、退缩",
+              career: "面对挑战需要坚持", love: "感情需要坚持", health: "与疾病斗争", social: "维护自己的立场", wealth: "财务需要防守" },
+            { id: 29, name: "权杖八", icon: "🔥", element: "火",
+              upright: "快速、行动、消息、旅行", reversed: "延迟、阻碍、消息延误",
+              career: "工作进展迅速", love: "感情快速发展", health: "快速恢复", social: "收到消息", wealth: "快速获利" },
+            { id: 30, name: "权杖九", icon: "🔥", element: "火",
+              upright: "警惕、坚持、防御、韧性", reversed: "放松、放弃、受伤",
+              career: "保持警惕", love: "感情需要警惕", health: "注意旧伤", social: "保持警惕", wealth: "财务谨慎" },
+            { id: 31, name: "权杖十", icon: "🔥", element: "火",
+              upright: "负担、责任、压力、劳累", reversed: "放下负担、推卸责任",
+              career: "工作压力大", love: "感情负担重", health: "过度劳累", social: "承担太多", wealth: "财务压力大" },
+            { id: 32, name: "权杖侍从", icon: "🔥", element: "火",
+              upright: "热情、新消息、探索、学习", reversed: "冲动、缺乏耐心、消息不实",
+              career: "新工作机会", love: "新恋情", health: "精力旺盛", social: "认识新朋友", wealth: "新收入来源" },
+            { id: 33, name: "权杖骑士", icon: "🔥", element: "火",
+              upright: "行动、热情、冒险、冲动", reversed: "鲁莽、延迟、缺乏计划",
+              career: "工作积极主动", love: "热情的追求者", health: "精力充沛", social: "社交活跃", wealth: "快速行动获利" },
+            { id: 34, name: "权杖王后", icon: "🔥", element: "火",
+              upright: "热情、自信、领导力、魅力", reversed: "专横、嫉妒、脾气暴躁",
+              career: "女性领导或贵人", love: "自信的女性", health: "身体健康", social: "受欢迎", wealth: "财运好" },
+            { id: 35, name: "权杖国王", icon: "🔥", element: "火",
+              upright: "领导力、果断、热情、权威", reversed: "独裁、暴躁、冲动",
+              career: "男性领导或贵人", love: "成熟的男性", health: "注意心脏", social: "有权威", wealth: "事业成功" },
+            
+            // 小阿卡那 - 圣杯(水元素) 14张
+            { id: 36, name: "圣杯一", icon: "🏆", element: "水",
+              upright: "新感情、喜悦、灵感、祝福", reversed: "情感失落、拒绝、空虚",
+              career: "工作带来满足感", love: "新恋情开始", health: "心情愉悦", social: "人际关系和谐", wealth: "情感满足" },
+            { id: 37, name: "圣杯二", icon: "🏆", element: "水",
+              upright: "合作、和谐、爱情、伙伴关系", reversed: "不和、分手、合作破裂",
+              career: "合作顺利", love: "感情甜蜜", health: "心情好", social: "人际关系好", wealth: "合作获利" },
+            { id: 38, name: "圣杯三", icon: "🏆", element: "水",
+              upright: "庆祝、聚会、友谊、丰收", reversed: "不和、嫉妒、派对过度",
+              career: "团队庆祝成功", love: "感情幸福", health: "心情愉悦", social: "朋友聚会", wealth: "丰收" },
+            { id: 39, name: "圣杯四", icon: "🏆", element: "水",
+              upright: "不满、冷漠、沉思、拒绝", reversed: "接受、新机会、热情",
+              career: "对工作不满", love: "感情冷淡", health: "情绪低落", social: "社交冷淡", wealth: "财务不满" },
+            { id: 40, name: "圣杯五", icon: "🏆", element: "水",
+              upright: "失落、悲伤、后悔、失望", reversed: "接受、放下、希望",
+              career: "工作失意", love: "感情失落", health: "情绪低落", social: "失去朋友", wealth: "财务损失" },
+            { id: 41, name: "圣杯六", icon: "🏆", element: "水",
+              upright: "怀旧、关怀、童年、礼物", reversed: "过去的负担、嫉妒、回报",
+              career: "得到前辈帮助", love: "青梅竹马的感情", health: "心情平静", social: "老朋友相聚", wealth: "收到礼物" },
+            { id: 42, name: "圣杯七", icon: "🏆", element: "水",
+              upright: "幻想、选择、迷惑、欲望", reversed: "现实、决断、清醒",
+              career: "面临多个选择", love: "感情迷惑", health: "精神恍惚", social: "社交迷惑", wealth: "虚假的机会" },
+            { id: 43, name: "圣杯八", icon: "🏆", element: "水",
+              upright: "离开、放弃、寻找、追求", reversed: "留下、放弃追求、迷茫",
+              career: "离开现有工作", love: "离开一段感情", health: "寻求健康", social: "离开社交圈", wealth: "放弃现有收入" },
+            { id: 44, name: "圣杯九", icon: "🏆", element: "水",
+              upright: "满足、愿望实现、享乐、成功", reversed: "不满、贪婪、愿望落空",
+              career: "工作满足", love: "感情满足", health: "身心健康", social: "社交成功", wealth: "财务满足" },
+            { id: 45, name: "圣杯十", icon: "🏆", element: "水",
+              upright: "幸福、家庭、和谐、圆满", reversed: "家庭不和、感情破裂",
+              career: "工作家庭平衡", love: "家庭幸福", health: "身心健康", social: "家庭和睦", wealth: "家庭财务好" },
+            { id: 46, name: "圣杯侍从", icon: "🏆", element: "水",
+              upright: "新消息、温柔、敏感、艺术", reversed: "情绪化、幼稚、消息不实",
+              career: "新工作消息", love: "温柔的追求者", health: "情绪敏感", social: "认识新朋友", wealth: "小收入" },
+            { id: 47, name: "圣杯骑士", icon: "🏆", element: "水",
+              upright: "浪漫、温柔、感性、追求", reversed: "花心、情绪化、不切实际",
+              career: "浪漫的工作方式", love: "浪漫的追求者", health: "情绪波动", social: "社交浪漫", wealth: "感性投资" },
+            { id: 48, name: "圣杯王后", icon: "🏆", element: "水",
+              upright: "温柔、关怀、直觉、母爱", reversed: "情绪化、依赖、嫉妒",
+              career: "女性贵人", love: "温柔的女性", health: "情绪稳定", social: "受欢迎", wealth: "财运好" },
+            { id: 49, name: "圣杯国王", icon: "🏆", element: "水",
+              upright: "成熟、稳重、情感丰富、智慧", reversed: "冷漠、情绪化、不诚实",
+              career: "成熟的男性领导", love: "成熟的男性", health: "情绪稳定", social: "受人尊敬", wealth: "财运稳定" },
+            
+            // 小阿卡那 - 宝剑(风元素-对应金) 14张
+            { id: 50, name: "宝剑一", icon: "⚔️", element: "金",
+              upright: "新思想、决断、真理、突破", reversed: "混乱、犹豫、失败",
+              career: "新的工作思路", love: "感情需要决断", health: "头脑清晰", social: "清晰的沟通", wealth: "新的财务思路" },
+            { id: 51, name: "宝剑二", icon: "⚔️", element: "金",
+              upright: "两难、逃避、僵局、平衡", reversed: "面对现实、打破僵局",
+              career: "面临两难选择", love: "感情僵局", health: "压力大", social: "人际关系紧张", wealth: "财务两难" },
+            { id: 52, name: "宝剑三", icon: "⚔️", element: "金",
+              upright: "心碎、悲伤、背叛、痛苦", reversed: "治愈、放下、原谅",
+              career: "工作受挫", love: "感情受伤", health: "心脏问题", social: "被背叛", wealth: "财务损失" },
+            { id: 53, name: "宝剑四", icon: "⚔️", element: "金",
+              upright: "休息、恢复、沉思、准备", reversed: "行动、疲惫、不安",
+              career: "需要休息", love: "感情需要冷静", health: "需要休养", social: "社交休息", wealth: "财务休息" },
+            { id: 54, name: "宝剑五", icon: "⚔️", element: "金",
+              upright: "冲突、胜利、自私、不和", reversed: "和解、失败、放下",
+              career: "工作冲突", love: "感情冲突", health: "压力大", social: "人际关系不和", wealth: "财务冲突" },
+            { id: 55, name: "宝剑六", icon: "⚔️", element: "金",
+              upright: "过渡、旅行、治愈、离开", reversed: "停滞、无法前进、拖延",
+              career: "工作过渡", love: "感情过渡", health: "逐渐恢复", social: "离开旧环境", wealth: "财务过渡" },
+            { id: 56, name: "宝剑七", icon: "⚔️", element: "金",
+              upright: "策略、欺骗、冒险、投机", reversed: "诚实、失败、暴露",
+              career: "需要策略", love: "感情有欺骗", health: "注意健康", social: "社交策略", wealth: "投机取巧" },
+            { id: 57, name: "宝剑八", icon: "⚔️", element: "金",
+              upright: "束缚、限制、迷茫、无助", reversed: "自由、解脱、突破",
+              career: "工作受限制", love: "感情受束缚", health: "身体不适", social: "社交受限", wealth: "财务受限" },
+            { id: 58, name: "宝剑九", icon: "⚔️", element: "金",
+              upright: "焦虑、恐惧、失眠、噩梦", reversed: "平静、放下、治愈",
+              career: "工作焦虑", love: "感情焦虑", health: "失眠", social: "社交焦虑", wealth: "财务焦虑" },
+            { id: 59, name: "宝剑十", icon: "⚔️", element: "金",
+              upright: "结束、失败、痛苦、毁灭", reversed: "重生、恢复、转机",
+              career: "工作结束", love: "感情结束", health: "严重健康问题", social: "人际关系结束", wealth: "财务崩溃" },
+            { id: 60, name: "宝剑侍从", icon: "⚔️", element: "金",
+              upright: "新消息、好奇、机智、学习", reversed: "冲动、八卦、消息不实",
+              career: "新工作消息", love: "新的追求者", health: "头脑灵活", social: "认识新朋友", wealth: "小收入" },
+            { id: 61, name: "宝剑骑士", icon: "⚔️", element: "金",
+              upright: "行动、迅速、机智、冲动", reversed: "鲁莽、延迟、粗心",
+              career: "工作迅速", love: "快速的感情", health: "精力充沛", social: "社交活跃", wealth: "快速获利" },
+            { id: 62, name: "宝剑王后", icon: "⚔️", element: "金",
+              upright: "智慧、独立、冷静、果断", reversed: "刻薄、冷漠、情绪化",
+              career: "智慧的女性领导", love: "独立的女性", health: "头脑清晰", social: "受人尊敬", wealth: "财运好" },
+            { id: 63, name: "宝剑国王", icon: "⚔️", element: "金",
+              upright: "权威、理性、果断、领导力", reversed: "独裁、冷酷、固执",
+              career: "理性的男性领导", love: "理性的男性", health: "头脑清晰", social: "有权威", wealth: "财运稳定" },
+            
+            // 小阿卡那 - 星币(土元素) 14张
+            { id: 64, name: "星币一", icon: "🪙", element: "土",
+              upright: "新机会、财富、物质、成功", reversed: "失去机会、财务损失",
+              career: "新工作机会", love: "稳定的感情", health: "身体健康", social: "新社交机会", wealth: "新财源" },
+            { id: 65, name: "星币二", icon: "🪙", element: "土",
+              upright: "平衡、灵活、波动、理财", reversed: "失衡、财务困难、混乱",
+              career: "工作平衡", love: "感情平衡", health: "身体平衡", social: "社交平衡", wealth: "理财" },
+            { id: 66, name: "星币三", icon: "🪙", element: "土",
+              upright: "合作、技能、学习、成就", reversed: "不和、技能不足、失败",
+              career: "团队合作", love: "稳定的感情", health: "身体健康", social: "合作社交", wealth: "合作获利" },
+            { id: 67, name: "星币四", icon: "🪙", element: "土",
+              upright: "保守、吝啬、控制、稳定", reversed: "挥霍、失去控制、不稳定",
+              career: "工作保守", love: "感情保守", health: "身体稳定", social: "社交保守", wealth: "财务保守" },
+            { id: 68, name: "星币五", icon: "🪙", element: "土",
+              upright: "贫困、疾病、困难、孤独", reversed: "恢复、帮助、好转",
+              career: "工作困难", love: "感情困难", health: "身体不好", social: "孤独", wealth: "财务困难" },
+            { id: 69, name: "星币六", icon: "🪙", element: "土",
+              upright: "给予、接受、慈善、分享", reversed: "自私、贪婪、不平等",
+              career: "得到帮助", love: "感情付出", health: "得到照顾", social: "分享", wealth: "财务分享" },
+            { id: 70, name: "星币七", icon: "🪙", element: "土",
+              upright: "耐心、等待、收获、评估", reversed: "急躁、放弃、损失",
+              career: "等待工作成果", love: "等待感情发展", health: "耐心恢复", social: "等待社交机会", wealth: "等待收获" },
+            { id: 71, name: "星币八", icon: "🪙", element: "土",
+              upright: "技能、努力、专注、成就", reversed: "懒惰、技能不足、失败",
+              career: "努力工作", love: "努力经营感情", health: "努力锻炼", social: "专注社交", wealth: "努力赚钱" },
+            { id: 72, name: "星币九", icon: "🪙", element: "土",
+              upright: "富足、独立、享受、成功", reversed: "依赖、损失、不安全感",
+              career: "工作成功", love: "独立的感情", health: "身体健康", social: "独立社交", wealth: "财务富足" },
+            { id: 73, name: "星币十", icon: "🪙", element: "土",
+              upright: "财富、家庭、传承、成功", reversed: "财务损失、家庭不和",
+              career: "事业成功", love: "家庭幸福", health: "身体健康", social: "家庭社交", wealth: "家庭财富" },
+            { id: 74, name: "星币侍从", icon: "🪙", element: "土",
+              upright: "学习、务实、新机会、谨慎", reversed: "懒惰、不切实际、浪费",
+              career: "新工作机会", love: "务实的追求者", health: "身体健康", social: "认识新朋友", wealth: "小收入" },
+            { id: 75, name: "星币骑士", icon: "🪙", element: "土",
+              upright: "务实、可靠、努力、耐心", reversed: "懒惰、不负责任、拖延",
+              career: "努力工作", love: "可靠的追求者", health: "身体健康", social: "可靠的朋友", wealth: "稳定收入" },
+            { id: 76, name: "星币王后", icon: "🪙", element: "土",
+              upright: "富足、务实、关怀、慷慨", reversed: "吝啬、贪婪、依赖",
+              career: "务实的女性领导", love: "务实的女性", health: "身体健康", social: "受欢迎", wealth: "财运好" },
+            { id: 77, name: "星币国王", icon: "🪙", element: "土",
+              upright: "成功、务实、权威、财富", reversed: "固执、贪婪、失败",
+              career: "成功的男性领导", love: "务实的男性", health: "身体健康", social: "受人尊敬", wealth: "财运极佳" }
+        ];
+        
+        // 五行对应食材库（每种25种，共125种）
+        const elementIngredients = {
+            "木": [
+                { name: "菠菜", icon: "🥬", isStaple: false, energy: "生发之气", benefit: "疏肝理气，提升贵人运" },
+                { name: "芹菜", icon: "🥬", isStaple: false, energy: "清阳之气", benefit: "醒脑开窍，提升学业运" },
+                { name: "黄瓜", icon: "🥒", isStaple: false, energy: "清凉之气", benefit: "化解口舌是非，提升人际运" },
+                { name: "西兰花", icon: "🥦", isStaple: false, energy: "繁盛之气", benefit: "招财进宝，提升财运" },
+                { name: "生菜", icon: "🥬", isStaple: false, energy: "生财之气", benefit: "财源广进，提升偏财运" },
+                { name: "苦瓜", icon: "🥒", isStaple: false, energy: "苦尽甘来之气", benefit: "化解灾厄，提升整体运" },
+                { name: "芦笋", icon: "🥦", isStaple: false, energy: "节节高升之气", benefit: "事业晋升，提升官运" },
+                { name: "青椒", icon: "🫑", isStaple: false, energy: "锐利之气", benefit: "破除霉运，提升健康运" },
+                { name: "豆角", icon: "🫛", isStaple: false, energy: "饱满之气", benefit: "聚气生财，提升正财运" },
+                { name: "油菜", icon: "🥬", isStaple: false, energy: "油润之气", benefit: "润滑人际关系，提升社交运" },
+                { name: "茼蒿", icon: "🥬", isStaple: false, energy: "清芬之气", benefit: "清新开窍，提升智慧运" },
+                { name: "空心菜", icon: "🥬", isStaple: false, energy: "通达之气", benefit: "四通八达，提升事业运" },
+                { name: "韭菜", icon: "🥬", isStaple: false, energy: "温补之气", benefit: "温补阳气，提升健康运" },
+                { name: "香菜", icon: "🥬", isStaple: false, energy: "芳香之气", benefit: "开胃醒脾，提升食欲运" },
+                { name: "苋菜", icon: "🥬", isStaple: false, energy: "红色之气", benefit: "补血养颜，提升颜值运" },
+                { name: "青苹果", icon: "🍏", isStaple: false, energy: "青涩之气", benefit: "开启新运，提升事业运" },
+                { name: "柠檬", icon: "🍋", isStaple: false, energy: "锐利之气", benefit: "破除霉运，提升健康运" },
+                { name: "猕猴桃", icon: "🥝", isStaple: false, energy: "维C之气", benefit: "增强免疫力，提升健康运" },
+                { name: "牛油果", icon: "🥑", isStaple: false, energy: "油腻之气", benefit: "润滑肠道，提升消化运" },
+                { name: "杨桃", icon: "🍈", isStaple: false, energy: "星形之气", benefit: "星光闪耀，提升事业运" },
+                { name: "毛豆", icon: "🫛", isStaple: false, energy: "饱满之气", benefit: "聚气生财，提升正财运" },
+                { name: "绿豆", icon: "🫘", isStaple: false, energy: "清凉之气", benefit: "清热解毒，提升健康运" },
+                { name: "绿茶", icon: "🍵", isStaple: false, energy: "清新之气", benefit: "提神醒脑，提升智慧运" },
+                { name: "薄荷", icon: "🌿", isStaple: false, energy: "清凉之气", benefit: "清凉解暑，提升健康运" },
+                { name: "海带", icon: "🌿", isStaple: false, energy: "海洋之气", benefit: "海纳百川，提升财运" }
+            ],
+            "火": [
+                { name: "番茄", icon: "🍅", isStaple: false, energy: "热情之火", benefit: "提升魅力，增强桃花运" },
+                { name: "红辣椒", icon: "🌶️", isStaple: false, energy: "刚烈之火", benefit: "驱邪避凶，提升辟邪运" },
+                { name: "胡萝卜", icon: "🥕", isStaple: false, energy: "明亮之火", benefit: "明目益智，提升智慧运" },
+                { name: "红椒", icon: "🫑", isStaple: false, energy: "热烈之火", benefit: "提升人缘，增强社交运" },
+                { name: "南瓜", icon: "🎃", isStaple: true, energy: "温暖之火", benefit: "家庭和睦，提升家庭运" },
+                { name: "红枣", icon: "🫘", isStaple: false, energy: "温补之火", benefit: "补血养气，提升健康运" },
+                { name: "山楂", icon: "🍒", isStaple: false, energy: "消食之火", benefit: "化解积食，提升肠胃运" },
+                { name: "草莓", icon: "🍓", isStaple: false, energy: "甜蜜之火", benefit: "提升人缘，增强社交运" },
+                { name: "樱桃", icon: "🍒", isStaple: false, energy: "珍贵之火", benefit: "带来好运，提升贵人运" },
+                { name: "荔枝", icon: "🍒", isStaple: false, energy: "滋补之火", benefit: "补气养血，提升健康运" },
+                { name: "龙眼", icon: "🍒", isStaple: false, energy: "安神之火", benefit: "安神定志，提升睡眠运" },
+                { name: "石榴", icon: "🍒", isStaple: false, energy: "多子之火", benefit: "多子多福，提升家庭运" },
+                { name: "柿子", icon: "🍅", isStaple: false, energy: "吉祥之火", benefit: "事事如意，提升整体运" },
+                { name: "红提", icon: "🍇", isStaple: false, energy: "晶莹之火", benefit: "养眼明目，提升智慧运" },
+                { name: "红心火龙果", icon: "🍈", isStaple: false, energy: "红火之气", benefit: "红红火火，提升财运" },
+                { name: "牛肉", icon: "🥩", isStaple: false, energy: "强壮之火", benefit: "增强体魄，提升体力运" },
+                { name: "红豆", icon: "🫘", isStaple: false, energy: "相思之火", benefit: "增进感情，提升姻缘运" },
+                { name: "红茶", icon: "☕", isStaple: false, energy: "温和之火", benefit: "安神定志，提升睡眠运" },
+                { name: "枸杞", icon: "🫐", isStaple: false, energy: "红色之火", benefit: "补肝明目，提升智慧运" },
+                { name: "玫瑰花", icon: "🌹", isStaple: false, energy: "浪漫之火", benefit: "活血化瘀，提升姻缘运" },
+                { name: "红糖", icon: "🫘", isStaple: false, energy: "温补之火", benefit: "补血活血，提升健康运" },
+                { name: "红曲米", icon: "🍚", isStaple: true, energy: "红色之火", benefit: "活血化瘀，提升健康运" },
+                { name: "赤小豆", icon: "🫘", isStaple: false, energy: "红色之火", benefit: "利水消肿，提升健康运" },
+                { name: "红花", icon: "🌺", isStaple: false, energy: "活血之火", benefit: "活血通经，提升健康运" },
+                { name: "红枣干", icon: "🫘", isStaple: false, energy: "温补之火", benefit: "补血养气，提升健康运" }
+            ],
+            "土": [
+                { name: "玉米", icon: "🌽", isStaple: true, energy: "大地之气", benefit: "稳固根基，提升事业运" },
+                { name: "土豆", icon: "🥔", isStaple: true, energy: "厚重之气", benefit: "踏实稳重，提升贵人运" },
+                { name: "红薯", icon: "🍠", isStaple: true, energy: "甘甜之气", benefit: "生活甜蜜，提升家庭运" },
+                { name: "小米", icon: "🌾", isStaple: true, energy: "五谷之气", benefit: "五谷丰登，提升整体运" },
+                { name: "大米", icon: "🍚", isStaple: true, energy: "精华之气", benefit: "滋养五脏，提升整体运" },
+                { name: "糯米", icon: "🍚", isStaple: true, energy: "黏糯之气", benefit: "黏住财运，提升财运" },
+                { name: "燕麦", icon: "🌾", isStaple: true, energy: "健康之气", benefit: "降低血脂，提升健康运" },
+                { name: "荞麦", icon: "🌾", isStaple: true, energy: "清洁之气", benefit: "清洁肠道，提升消化运" },
+                { name: "高粱", icon: "🌾", isStaple: true, energy: "挺拔之气", benefit: "步步高升，提升官运" },
+                { name: "薏米", icon: "🫘", isStaple: true, energy: "利湿之气", benefit: "利水渗湿，提升健康运" },
+                { name: "南瓜", icon: "🎃", isStaple: true, energy: "丰收之气", benefit: "硕果累累，提升财运" },
+                { name: "黄豆", icon: "🫘", isStaple: false, energy: "滋养之气", benefit: "健脾养胃，提升健康运" },
+                { name: "胡萝卜", icon: "🥕", isStaple: false, energy: "明亮之气", benefit: "前途光明，提升事业运" },
+                { name: "芒果", icon: "🥭", isStaple: false, energy: "热带之气", benefit: "热情奔放，提升人际运" },
+                { name: "香蕉", icon: "🍌", isStaple: false, energy: "快乐之气", benefit: "心情愉悦，提升情绪运" },
+                { name: "蜂蜜", icon: "🍯", isStaple: false, energy: "甜蜜之气", benefit: "甜甜蜜蜜，提升感情运" },
+                { name: "山药", icon: "🥔", isStaple: true, energy: "滋补之气", benefit: "补肾益精，提升健康运" },
+                { name: "芋头", icon: "🥔", isStaple: true, energy: "软糯之气", benefit: "软糯可口，提升食欲运" },
+                { name: "莲藕", icon: "🪷", isStaple: false, energy: "通达之气", benefit: "四通八达，提升人际运" },
+                { name: "香菇", icon: "🍄", isStaple: false, energy: "鲜香之气", benefit: "扶正补虚，提升健康运" },
+                { name: "平菇", icon: "🍄", isStaple: false, energy: "鲜美之气", benefit: "舒筋活络，提升健康运" },
+                { name: "金针菇", icon: "🍄", isStaple: false, energy: "细长之气", benefit: "益智健脑，提升智慧运" },
+                { name: "杏鲍菇", icon: "🍄", isStaple: false, energy: "肥厚之气", benefit: "健脾开胃，提升食欲运" },
+                { name: "木耳", icon: "🍄", isStaple: false, energy: "吸附之气", benefit: "清除毒素，提升健康运" },
+                { name: "银耳", icon: "🍄", isStaple: false, energy: "滋润之气", benefit: "美容养颜，提升颜值运" }
+            ],
+            "金": [
+                { name: "鸡蛋", icon: "🥚", isStaple: false, energy: "圆满之气", benefit: "事事圆满，提升整体运" },
+                { name: "白萝卜", icon: "🥕", isStaple: false, energy: "纯净之气", benefit: "清肺化痰，提升健康运" },
+                { name: "银耳", icon: "🍄", isStaple: false, energy: "滋润之气", benefit: "美容养颜，提升颜值运" },
+                { name: "百合", icon: "🌸", isStaple: false, energy: "纯洁之气", benefit: "百年好合，提升姻缘运" },
+                { name: "雪梨", icon: "🍐", isStaple: false, energy: "清凉之气", benefit: "润肺止咳，提升健康运" },
+                { name: "豆腐", icon: "🥢", isStaple: false, energy: "清白之气", benefit: "清正廉洁，提升官运" },
+                { name: "莲藕", icon: "🪷", isStaple: false, energy: "通达之气", benefit: "四通八达，提升人际运" },
+                { name: "山药", icon: "🥔", isStaple: true, energy: "滋补之气", benefit: "补肾益精，提升健康运" },
+                { name: "大米", icon: "🍚", isStaple: true, energy: "精华之气", benefit: "滋养五脏，提升整体运" },
+                { name: "糯米", icon: "🍚", isStaple: true, energy: "黏糯之气", benefit: "黏住财运，提升财运" },
+                { name: "白桃", icon: "🍑", isStaple: false, energy: "纯洁之气", benefit: "养颜美容，提升颜值运" },
+                { name: "白梨", icon: "🍐", isStaple: false, energy: "清凉之气", benefit: "润肺止咳，提升健康运" },
+                { name: "白葡萄", icon: "🍇", isStaple: false, energy: "晶莹之气", benefit: "养眼明目，提升智慧运" },
+                { name: "白枣", icon: "🫒", isStaple: false, energy: "甘甜之气", benefit: "补中益气，提升健康运" },
+                { name: "椰子", icon: "🥥", isStaple: false, energy: "清凉之气", benefit: "清暑解渴，提升健康运" },
+                { name: "鸡肉", icon: "🍗", isStaple: false, energy: "凤凰之气", benefit: "飞黄腾达，提升事业运" },
+                { name: "鸭肉", icon: "🍗", isStaple: false, energy: "滋阴之气", benefit: "滋阴养胃，提升健康运" },
+                { name: "鹅肉", icon: "🍗", isStaple: false, energy: "滋补之气", benefit: "益气补虚，提升健康运" },
+                { name: "鸽肉", icon: "🕊️", isStaple: false, energy: "滋补之气", benefit: "补肝壮肾，提升健康运" },
+                { name: "牛奶", icon: "🥛", isStaple: false, energy: "滋润之气", benefit: "补虚损，提升健康运" },
+                { name: "酸奶", icon: "🥛", isStaple: false, energy: "消化之气", benefit: "调节肠道，提升消化运" },
+                { name: "奶酪", icon: "🧀", isStaple: false, energy: "滋补之气", benefit: "补钙壮骨，提升健康运" },
+                { name: "杏仁", icon: "🥜", isStaple: false, energy: "止咳之气", benefit: "止咳平喘，提升健康运" },
+                { name: "白果", icon: "🫘", isStaple: false, energy: "收敛之气", benefit: "敛肺定喘，提升健康运" },
+                { name: "莲子", icon: "🫘", isStaple: false, energy: "清心之气", benefit: "清心安神，提升睡眠运" }
+            ],
+            "水": [
+                { name: "黑豆", icon: "🫘", isStaple: false, energy: "黑色之气", benefit: "补肾乌发，提升健康运" },
+                { name: "黑芝麻", icon: "🫘", isStaple: false, energy: "滋养之气", benefit: "延年益寿，提升长寿运" },
+                { name: "黑木耳", icon: "🍄", isStaple: false, energy: "吸附之气", benefit: "清除毒素，提升健康运" },
+                { name: "海带", icon: "🌿", isStaple: false, energy: "海洋之气", benefit: "海纳百川，提升财运" },
+                { name: "紫菜", icon: "🌿", isStaple: false, energy: "深海之气", benefit: "深藏不露，提升智慧运" },
+                { name: "裙带菜", icon: "🌿", isStaple: false, energy: "飘逸之气", benefit: "飘逸灵动，提升人际运" },
+                { name: "蓝莓", icon: "🫐", isStaple: false, energy: "智慧之气", benefit: "明目益智，提升学业运" },
+                { name: "桑葚", icon: "🫐", isStaple: false, energy: "滋阴之气", benefit: "滋阴补肾，提升健康运" },
+                { name: "黑葡萄", icon: "🍇", isStaple: false, energy: "黑色之气", benefit: "补肝肾，提升健康运" },
+                { name: "黑加仑", icon: "🫐", isStaple: false, energy: "黑色之气", benefit: "补气养血，提升健康运" },
+                { name: "黑枣", icon: "🫘", isStaple: false, energy: "黑色之气", benefit: "补中益气，提升健康运" },
+                { name: "黑鱼", icon: "🐟", isStaple: false, energy: "灵动之气", benefit: "灵活应变，提升事业运" },
+                { name: "虾", icon: "🦐", isStaple: false, energy: "跳跃之气", benefit: "步步高升，提升官运" },
+                { name: "海参", icon: "🦑", isStaple: false, energy: "珍贵之气", benefit: "大补元气，提升整体运" },
+                { name: "螃蟹", icon: "🦀", isStaple: false, energy: "横行之气", benefit: "横行天下，提升事业运" },
+                { name: "生蚝", icon: "🦪", isStaple: false, energy: "海洋之气", benefit: "滋阴补血，提升健康运" },
+                { name: "扇贝", icon: "🦪", isStaple: false, energy: "海洋之气", benefit: "滋阴补肾，提升健康运" },
+                { name: "蛤蜊", icon: "🦪", isStaple: false, energy: "海洋之气", benefit: "滋阴润燥，提升健康运" },
+                { name: "鱿鱼", icon: "🦑", isStaple: false, energy: "柔韧之气", benefit: "柔韧有余，提升人际运" },
+                { name: "墨鱼", icon: "🦑", isStaple: false, energy: "滋阴之气", benefit: "养血滋阴，提升健康运" },
+                { name: "黑米", icon: "🍚", isStaple: true, energy: "黑色之气", benefit: "滋阴补肾，提升健康运" },
+                { name: "黑糯米", icon: "🍚", isStaple: true, energy: "黑色之气", benefit: "补血益气，提升健康运" },
+                { name: "黑豆豉", icon: "🫘", isStaple: false, energy: "发酵之气", benefit: "开胃消食，提升食欲运" },
+                { name: "黑茶", icon: "🍵", isStaple: false, energy: "醇厚之气", benefit: "降脂减肥，提升健康运" },
+                { name: "黑咖啡", icon: "☕", isStaple: false, energy: "提神之气", benefit: "提神醒脑，提升智慧运" }
+            ]
+        };
+        
+        // 玄学基础数据
+        const fiveElements = ["金", "木", "水", "火", "土"];
+        const fortuneLevels = ["大吉", "中吉", "小吉", "平"];
+        const luckyColors = ["红色", "黄色", "蓝色", "绿色", "白色", "黑色", "紫色", "粉色", "金色", "银色"];
+        const luckyNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
+        const bestTimes = ["7-9点", "9-11点", "11-13点", "13-15点", "15-17点", "17-19点", "19-21点", "21-23点"];
+        
+        // 全局变量
+        let currentStep = 1;
+        let selectedTopic = null;
+        let userQuestion = "";
+        let selectedSpread = "single";
+        let shuffledCards = [];
+        let selectedCards = [];
+        let todayFortune = null;
+        let luckyIngredients = [];
+        
+        // DOM元素
+        const stepDots = document.querySelectorAll('.step-dot');
+        const step1Area = document.getElementById('step1Area');
+        const step2Area = document.getElementById('step2Area');
+        const step3Area = document.getElementById('step3Area');
+        const step4Area = document.getElementById('step4Area');
+        const step5Area = document.getElementById('step5Area');
+        const topicBtns = document.querySelectorAll('.topic-btn');
+        const questionTemplates = document.querySelectorAll('.question-template');
+        const userQuestionInput = document.getElementById('userQuestion');
+        const spreadBtns = document.querySelectorAll('.spread-btn');
+        const nextStep1Btn = document.getElementById('nextStep1Btn');
+        const displayQuestion = document.getElementById('displayQuestion');
+        const deck = document.getElementById('deck');
+        const shuffleBtn = document.getElementById('shuffleBtn');
+        const shuffleHint = document.getElementById('shuffleHint');
+        const tarotFan = document.getElementById('tarotFan');
+        const cardsNeeded = document.getElementById('cardsNeeded');
+        const drawHint = document.getElementById('drawHint');
+        const selectedCardsContainer = document.getElementById('selectedCardsContainer');
+        const spreadInterpretation = document.getElementById('spreadInterpretation');
+        const nextStep4Btn = document.getElementById('nextStep4Btn');
+        const recalculateBtn = document.getElementById('recalculateBtn');
+        const fortuneOverlay = document.getElementById('fortuneOverlay');
+        const meteorContainer = document.getElementById('meteorContainer');
+        const analysisArea = document.getElementById('analysisArea');
+        const analysisContent = document.getElementById('analysisContent');
+        
+        // 初始化
+        function init() {
+            setupEventListeners();
+            updateStepIndicator();
+        }
+        
+        // 更新步骤指示器
+        function updateStepIndicator() {
+            stepDots.forEach((dot, index) => {
+                dot.classList.remove('active');
+                if (index < currentStep) {
+                    dot.classList.add('active');
+                }
+            });
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 占卜方向选择
+            topicBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    selectedTopic = btn.dataset.topic;
+                    topicBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    checkNextStep1Enabled();
+                });
+            });
+            
+            // 问题模板选择
+            questionTemplates.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    userQuestionInput.value = btn.dataset.question;
+                    userQuestion = btn.dataset.question;
+                    checkNextStep1Enabled();
+                });
+            });
+            
+            // 问题输入
+            userQuestionInput.addEventListener('input', () => {
+                userQuestion = userQuestionInput.value.trim();
+                checkNextStep1Enabled();
+            });
+            
+            // 牌阵选择
+            spreadBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    selectedSpread = btn.dataset.spread;
+                    spreadBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+            
+            // 下一步按钮
+            nextStep1Btn.addEventListener('click', goToStep2);
+            
+            // 洗牌按钮
+            shuffleBtn.addEventListener('click', startShuffle);
+            
+            // 下一步按钮
+            nextStep4Btn.addEventListener('click', goToStep5);
+            
+            // 重新测算按钮
+            recalculateBtn.addEventListener('click', resetAll);
+        }
+        
+        // 检查下一步按钮是否可用
+        function checkNextStep1Enabled() {
+            if (selectedTopic && userQuestion) {
+                nextStep1Btn.disabled = false;
+            } else {
+                nextStep1Btn.disabled = true;
+            }
+        }
+        
+        // 进入步骤2
+        function goToStep2() {
+            currentStep = 2;
+            updateStepIndicator();
+            step1Area.classList.add('hidden');
+            step2Area.classList.remove('hidden');
+            displayQuestion.textContent = userQuestion;
+        }
+        
+        // 开始洗牌
+        function startShuffle() {
+            shuffleBtn.disabled = true;
+            shuffleHint.textContent = "正在洗牌中...";
+            
+            // 洗牌动画
+            deck.classList.add('shuffle-animation');
+            
+            // 打乱牌组
+            shuffledCards = [...tarotCards].sort(() => Math.random() - 0.5);
+            
+            // 为每张牌随机生成正逆位
+            shuffledCards.forEach(card => {
+                card.isReversed = Math.random() > 0.5;
+            });
+            
+            setTimeout(() => {
+                deck.classList.remove('shuffle-animation');
+                shuffleHint.textContent = "洗牌完成！点击进行切牌";
+                shuffleBtn.textContent = "✂️ 点击切牌";
+                shuffleBtn.onclick = startCut;
+                shuffleBtn.disabled = false;
+            }, 1500);
+        }
+        
+        // 开始切牌
+        function startCut() {
+            shuffleBtn.disabled = true;
+            shuffleHint.textContent = "正在切牌中...";
+            
+            // 切牌动画
+            deck.classList.add('cut-animation');
+            
+            setTimeout(() => {
+                deck.classList.remove('cut-animation');
+                shuffleHint.textContent = "切牌完成！准备抽牌";
+                
+                setTimeout(() => {
+                    goToStep3();
+                }, 1000);
+            }, 1000);
+        }
+        
+        // 进入步骤3
+        function goToStep3() {
+            currentStep = 3;
+            updateStepIndicator();
+            step2Area.classList.add('hidden');
+            step3Area.classList.remove('hidden');
+            
+            const needed = spreads[selectedSpread].cards;
+            cardsNeeded.textContent = needed;
+            drawHint.textContent = `请凭直觉抽取 ${needed} 张牌`;
+            
+            // 渲染平铺式塔罗牌网格
+            renderTarotGrid();
+        }
+        
+        // 渲染平铺式塔罗牌网格
+        function renderTarotGrid() {
+            tarotFan.innerHTML = '';
+            
+            // 显示前22张牌供选择（数量适中，避免过多）
+            const displayCards = shuffledCards.slice(0, 22);
+            
+            displayCards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'tarot-card';
+                cardElement.dataset.index = index;
+                cardElement.innerHTML = `
+                    <div class="tarot-card-inner">
+                        <div class="tarot-card-back">
+                            🎴
+                        </div>
+                        <div class="tarot-card-front">
+                            ${card.isReversed ? '<div class="reversed-badge">逆位</div>' : ''}
+                            <div class="text-4xl mb-2">${card.icon}</div>
+                            <div class="text-lg font-bold">${card.name}</div>
+                            <div class="text-xs mt-1">${card.isReversed ? card.reversed : card.upright}</div>
+                        </div>
+                    </div>
+                `;
+                cardElement.addEventListener('click', () => selectCard(card, cardElement, index));
+                tarotFan.appendChild(cardElement);
+            });
+        }
+        
+        // 选择塔罗牌
+        function selectCard(card, cardElement, index) {
+            const needed = spreads[selectedSpread].cards;
+            if (selectedCards.length >= needed) return;
+            
+            // 翻牌动画
+            if (card.isReversed) {
+                cardElement.classList.add('reversed');
+            } else {
+                cardElement.classList.add('flipped');
+            }
+            cardElement.classList.add('disabled');
+            
+            // 添加到已选牌
+            selectedCards.push(card);
+            
+            // 更新提示
+            if (selectedCards.length < needed) {
+                drawHint.textContent = `已选 ${selectedCards.length}/${needed} 张，请继续抽取`;
+            } else {
+                drawHint.textContent = "抽牌完成！正在进行牌阵解读...";
+                // 延迟1秒后进入解读
+                setTimeout(goToStep4, 1000);
+            }
+        }
+        
+        // 进入步骤4
+        function goToStep4() {
+            currentStep = 4;
+            updateStepIndicator();
+            step3Area.classList.add('hidden');
+            step4Area.classList.remove('hidden');
+            
+            // 显示已选牌
+            showSelectedCards();
+            
+            // 显示牌阵解读（新增明确好坏方向+建议）
+            showSpreadInterpretation();
+        }
+        
+        // 显示已选牌
+        function showSelectedCards() {
+            selectedCardsContainer.innerHTML = '';
+            
+            const positions = spreads[selectedSpread].positions;
+            selectedCards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'selected-card';
+                cardElement.innerHTML = `
+                    <div class="text-sm text-blue-100 mb-2">${positions[index]}</div>
+                    <div class="text-4xl mb-2">${card.icon}</div>
+                    <div class="text-lg font-bold">${card.name}</div>
+                    <div class="text-xs text-blue-100 mt-1">${card.isReversed ? '逆位' : '正位'}</div>
+                    <div class="text-xs text-blue-200 mt-1">${card.isReversed ? card.reversed : card.upright}</div>
+                `;
+                selectedCardsContainer.appendChild(cardElement);
+            });
+        }
+        
+        // 显示牌阵解读（新增明确好坏方向+针对性建议）
+        function showSpreadInterpretation() {
+            const positions = spreads[selectedSpread].positions;
+            let interpretation = `<h4 class="text-xl font-bold mb-4 text-center">${spreads[selectedSpread].name} 解读</h4>`;
+            
+            // 单张牌解读
+            interpretation += `<div class="space-y-4 mb-6">`;
+            selectedCards.forEach((card, index) => {
+                const meaning = card.isReversed ? card[selectedTopic] + "（需注意调整）" : card[selectedTopic];
+                interpretation += `
+                    <div class="bg-white/20 rounded-xl p-4">
+                        <h5 class="font-bold mb-2">${positions[index]}：${card.name} ${card.isReversed ? '（逆位）' : '（正位）'}</h5>
+                        <p>${meaning}</p>
+                    </div>
+                `;
+            });
+            interpretation += `</div>`;
+            
+            // 新增：明确好坏方向判断
+            const uprightCount = selectedCards.filter(card => !card.isReversed).length;
+            const totalCount = selectedCards.length;
+            const goodRatio = uprightCount / totalCount;
+            
+            let overallTrend = "";
+            let trendColor = "";
+            if (goodRatio >= 0.7) {
+                overallTrend = "整体向好 ✅";
+                trendColor = "text-green-300";
+            } else if (goodRatio >= 0.4) {
+                overallTrend = "喜忧参半 ⚖️";
+                trendColor = "text-yellow-300";
+            } else {
+                overallTrend = "需要注意 ⚠️";
+                trendColor = "text-red-300";
+            }
+            
+            // 新增：针对性建议
+            let suggestions = [];
+            if (selectedTopic === "career") {
+                if (goodRatio >= 0.7) {
+                    suggestions = [
+                        "主动争取工作机会，大胆展示你的能力",
+                        "本月适合推进新项目，成功率较高",
+                        "可以向上级提出你的想法和建议"
+                    ];
+                } else if (goodRatio >= 0.4) {
+                    suggestions = [
+                        "稳扎稳打，做好本职工作",
+                        "避免冲动决策，重要事情多请教前辈",
+                        "注意与同事的沟通方式"
+                    ];
+                } else {
+                    suggestions = [
+                        "本月以守为主，不要轻易跳槽或启动新项目",
+                        "注意工作中的细节，避免出错",
+                        "调整心态，不要给自己太大压力"
+                    ];
+                }
+            } else if (selectedTopic === "love") {
+                if (goodRatio >= 0.7) {
+                    suggestions = [
+                        "感情运势佳，适合表白或增进感情",
+                        "多与对方沟通，分享你的想法",
+                        "可以安排一次浪漫的约会"
+                    ];
+                } else if (goodRatio >= 0.4) {
+                    suggestions = [
+                        "感情需要双方共同经营",
+                        "多理解对方，避免不必要的争吵",
+                        "给彼此一些空间和时间"
+                    ];
+                } else {
+                    suggestions = [
+                        "感情可能会遇到一些波折，保持冷静",
+                        "不要急于做决定，先理清自己的想法",
+                        "多关注自己的感受，不要委屈自己"
+                    ];
+                }
+            } else if (selectedTopic === "health") {
+                if (goodRatio >= 0.7) {
+                    suggestions = [
+                        "身体状况良好，继续保持健康的生活习惯",
+                        "可以适当增加运动量",
+                        "保持心情愉悦"
+                    ];
+                } else if (goodRatio >= 0.4) {
+                    suggestions = [
+                        "注意劳逸结合，不要过度劳累",
+                        "饮食要规律，避免暴饮暴食",
+                        "保证充足的睡眠"
+                    ];
+                } else {
+                    suggestions = [
+                        "身体可能会出现一些小问题，及时就医检查",
+                        "减少熬夜，注意休息",
+                        "调整饮食结构，多吃清淡食物"
+                    ];
+                }
+            } else if (selectedTopic === "social") {
+                if (goodRatio >= 0.7) {
+                    suggestions = [
+                        "人际关系和谐，适合拓展社交圈",
+                        "多参加社交活动，会认识志同道合的朋友",
+                        "你的人缘会越来越好"
+                    ];
+                } else if (goodRatio >= 0.4) {
+                    suggestions = [
+                        "与朋友相处要真诚",
+                        "避免在背后议论他人",
+                        "遇到矛盾及时沟通解决"
+                    ];
+                } else {
+                    suggestions = [
+                        "本月可能会遇到一些人际纠纷，尽量避免",
+                        "不要轻易相信他人",
+                        "远离负能量的人"
+                    ];
+                }
+            } else if (selectedTopic === "wealth") {
+                if (goodRatio >= 0.7) {
+                    suggestions = [
+                        "财运不错，可能会有意外收入",
+                        "可以适当进行一些稳健的投资",
+                        "合理规划开支"
+                    ];
+                } else if (goodRatio >= 0.4) {
+                    suggestions = [
+                        "财运平稳，量入为出",
+                        "避免高风险投资",
+                        "可以存一些钱以备不时之需"
+                    ];
+                } else {
+                    suggestions = [
+                        "本月财运不佳，尽量不要投资",
+                        "控制消费，避免不必要的开支",
+                        "不要借钱给他人"
+                    ];
+                }
+            }
+            
+            // 综合解读
+            interpretation += `
+                <div class="bg-white/20 rounded-xl p-4">
+                    <h5 class="font-bold mb-3">📊 整体趋势判断</h5>
+                    <p class="text-xl font-bold ${trendColor} mb-3">${overallTrend}</p>
+                    <p class="mb-4">针对你关于"${userQuestion}"的问题，从${spreads[selectedSpread].name}来看，${uprightCount}张正位，${totalCount-uprightCount}张逆位。${uprightCount > totalCount-uprightCount ? '正位牌居多，整体能量积极向上' : '逆位牌较多，需要注意调整状态'}。</p>
+                    
+                    <h5 class="font-bold mb-3">💡 针对性建议</h5>
+                    <ul class="list-disc pl-5 space-y-2">
+                        ${suggestions.map(s => `<li>${s}</li>`).join('')}
+                    </ul>
+                    
+                    <p class="mt-4">建议你结合今日推荐的增运食材，调整自己的能量状态，更好地应对当前的${topicNames[selectedTopic]}问题。</p>
+                </div>
+            `;
+            
+            spreadInterpretation.innerHTML = interpretation;
+        }
+        
+        // 进入步骤5
+        function goToStep5() {
+            currentStep = 5;
+            updateStepIndicator();
+            step4Area.classList.add('hidden');
+            step5Area.classList.remove('hidden');
+            
+            // 播放玄学特效
+            showLuckPlusEffect();
+            fortuneOverlay.classList.add('active');
+            createMeteors();
+            
+            // 3秒后显示结果
+            setTimeout(() => {
+                fortuneOverlay.classList.remove('active');
+                calculateFortune();
+            }, 3000);
+        }
+        
+        // 创建流星特效
+        function createMeteors() {
+            meteorContainer.innerHTML = '';
+            for (let i = 0; i < 30; i++) {
+                setTimeout(() => {
+                    const meteor = document.createElement('div');
+                    meteor.className = 'meteor';
+                    meteor.style.left = Math.random() * 100 + 'vw';
+                    meteor.style.animationDelay = Math.random() * 1.5 + 's';
+                    meteor.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                    meteorContainer.appendChild(meteor);
+                    setTimeout(() => {
+                        meteor.remove();
+                    }, 3000);
+                }, i * 100);
+            }
+        }
+        
+        // 运气+1+1+1特效
+        function showLuckPlusEffect() {
+            // 创建金光闪烁背景
+            const goldenFlash = document.createElement('div');
+            goldenFlash.className = 'golden-flash';
+            document.body.appendChild(goldenFlash);
+            setTimeout(() => goldenFlash.remove(), 3000);
+            
+            // 创建多个运气+1特效
+            const positions = [
+                { x: window.innerWidth * 0.3, y: window.innerHeight * 0.4 },
+                { x: window.innerWidth * 0.5, y: window.innerHeight * 0.3 },
+                { x: window.innerWidth * 0.7, y: window.innerHeight * 0.45 },
+                { x: window.innerWidth * 0.4, y: window.innerHeight * 0.55 },
+                { x: window.innerWidth * 0.6, y: window.innerHeight * 0.5 }
+            ];
+            
+            positions.forEach((pos, index) => {
+                setTimeout(() => {
+                    const luckElement = document.createElement('div');
+                    luckElement.className = 'luck-plus';
+                    luckElement.textContent = '运气+1 ✨';
+                    luckElement.style.left = pos.x + 'px';
+                    luckElement.style.top = pos.y + 'px';
+                    document.body.appendChild(luckElement);
+                    setTimeout(() => luckElement.remove(), 2000);
+                }, index * 300);
+            });
+        }
+        
+        // 计算今日运势
+        function calculateFortune() {
+            // 计算所有牌的综合五行能量
+            const elementCount = {};
+            fiveElements.forEach(element => elementCount[element] = 0);
+            selectedCards.forEach(card => elementCount[card.element]++);
+            
+            // 找出能量最强的五行作为综合五行
+            let userElement = fiveElements[0];
+            let maxCount = 0;
+            Object.keys(elementCount).forEach(element => {
+                if (elementCount[element] > maxCount) {
+                    maxCount = elementCount[element];
+                    userElement = element;
+                }
+            });
+            
+            // 计算宜补五行（相生关系：木生火，火生土，土生金，金生水，水生木）
+            const generateMap = { "木": "火", "火": "土", "土": "金", "金": "水", "水": "木" };
+            const lackElement = generateMap[userElement];
+            
+            // 计算运势等级（正位多则吉，逆位多则平）
+            const uprightCount = selectedCards.filter(card => !card.isReversed).length;
+            let fortuneIndex = Math.min(3, Math.floor(uprightCount / selectedCards.length * 4));
+            
+            todayFortune = {
+                userElement: userElement,
+                lackElement: lackElement,
+                fortuneLevel: fortuneLevels[fortuneIndex],
+                luckyColor: luckyColors[Math.floor(Math.random() * luckyColors.length)],
+                luckyNumber: luckyNumbers[Math.floor(Math.random() * luckyNumbers.length)],
+                bestTime: bestTimes[Math.floor(Math.random() * bestTimes.length)],
+                selectedTopic: selectedTopic,
+                selectedCards: selectedCards
+            };
+            
+            // 显示命理结果
+            document.getElementById('userElement').textContent = userElement;
+            document.getElementById('lackElement').textContent = lackElement;
+            document.getElementById('fortuneLevel').textContent = todayFortune.fortuneLevel;
+            document.getElementById('luckyColor').textContent = todayFortune.luckyColor;
+            document.getElementById('luckyNumber').textContent = todayFortune.luckyNumber;
+            document.getElementById('selectedTopic').textContent = topicNames[selectedTopic];
+            document.getElementById('bestTime').textContent = todayFortune.bestTime;
+            
+            // 生成今日6种幸运食材
+            generateLuckyIngredients();
+        }
+        
+        // 生成今日6种幸运食材（必含1种主食）
+        function generateLuckyIngredients() {
+            luckyIngredients = [];
+            const allIngredients = [];
+            
+            // 收集所有食材并标记五行
+            Object.keys(elementIngredients).forEach(element => {
+                elementIngredients[element].forEach(ingredient => {
+                    allIngredients.push({ ...ingredient, element: element });
+                });
+            });
+            
+            // 第一步：优先选择与今日宜补五行匹配的主食
+            let stapleIngredients = allIngredients.filter(ing => 
+                ing.isStaple && ing.element === todayFortune.lackElement
+            );
+            
+            // 如果没有匹配的，就从所有主食中随机选
+            if (stapleIngredients.length === 0) {
+                stapleIngredients = allIngredients.filter(ing => ing.isStaple);
+            }
+            
+            const selectedStaple = stapleIngredients[Math.floor(Math.random() * stapleIngredients.length)];
+            luckyIngredients.push(selectedStaple);
+            
+            // 第二步：从剩余食材中选择与宜补五行和综合五行匹配的食材
+            const matchingElements = [todayFortune.lackElement, todayFortune.userElement];
+            
+            const remainingIngredients = allIngredients.filter(ing => 
+                ing.name !== selectedStaple.name || ing.element !== selectedStaple.element
+            );
+            
+            // 优先选择匹配五行的食材
+            const priorityIngredients = remainingIngredients.filter(ing => 
+                matchingElements.includes(ing.element)
+            );
+            
+            // 打乱并选择
+            const shuffledPriority = priorityIngredients.sort(() => Math.random() - 0.5);
+            const shuffledRemaining = remainingIngredients.sort(() => Math.random() - 0.5);
+            
+            // 先从优先食材中选，不够再从剩余中补
+            luckyIngredients.push(...shuffledPriority.slice(0, 5));
+            if (luckyIngredients.length < 6) {
+                luckyIngredients.push(...shuffledRemaining.slice(0, 6 - luckyIngredients.length));
+            }
+            
+            // 整体打乱顺序
+            luckyIngredients.sort(() => Math.random() - 0.5);
+            
+            // 先隐藏所有主食标记
+            for (let i = 1; i <= 6; i++) {
+                document.getElementById(`stapleBadge${i}`).classList.add('hidden');
+            }
+            
+            // 显示6种食材
+            for (let i = 0; i < 6; i++) {
+                const ingredient = luckyIngredients[i];
+                document.getElementById(`ingredientIcon${i+1}`).textContent = ingredient.icon;
+                document.getElementById(`ingredientName${i+1}`).textContent = ingredient.name;
+                document.getElementById(`ingredientElement${i+1}`).textContent = `属${ingredient.element}`;
+                
+                // 如果是主食，显示黄色标记
+                if (ingredient.isStaple) {
+                    document.getElementById(`stapleBadge${i+1}`).classList.remove('hidden');
+                }
+            }
+        }
+        
+        // 显示食材详细分析
+        function showAnalysis(index) {
+            const ingredient = luckyIngredients[index];
+            const positions = spreads[selectedSpread].positions;
+            
+            // 生成详细分析内容
+            const analysis = `
+                <h4 class="text-2xl font-bold mb-4 text-center">${ingredient.icon} ${ingredient.name} 能量分析</h4>
+                
+                <div class="space-y-4">
+                    <div class="bg-white/20 rounded-xl p-4">
+                        <h5 class="font-bold text-lg mb-2">🎴 塔罗牌能量分析</h5>
+                        <p>你选择的占卜方向是<strong>${topicNames[selectedTopic]}</strong>，问题是"${userQuestion}"。</p>
+                        <p>你抽取的${spreads[selectedSpread].name}牌阵综合五行属${todayFortune.userElement}，今日宜补${todayFortune.lackElement}。</p>
+                        <p>${ingredient.name}五行属${ingredient.element}，${ingredient.element === todayFortune.lackElement ? '恰好能够补充你今日所缺的能量' : '与你的综合能量相生相助'}，${ingredient.benefit}。</p>
+                    </div>
+                    
+                    <div class="bg-white/20 rounded-xl p-4">
+                        <h5 class="font-bold text-lg mb-2">✨ 食材能量解读</h5>
+                        <p>${ingredient.name}蕴含${ingredient.energy}，能够与你今日的塔罗牌能量产生共鸣。</p>
+                        <p>尤其是${selectedCards[0].name}（${positions[0]}）牌所代表的"${selectedCards[0].isReversed ? selectedCards[0].reversed : selectedCards[0].upright}"能量，与${ingredient.name}的能量最为契合。</p>
+                    </div>
+                    
+                    <div class="bg-white/20 rounded-xl p-4">
+                        <h5 class="font-bold text-lg mb-2">📜 今日运势建议</h5>
+                        <p>今日最佳食用时间为${todayFortune.bestTime}，此时能量最为契合。</p>
+                        <p>${ingredient.name}${ingredient.isStaple ? '作为今日推荐主食' : '作为今日幸运食材'}，能够最大化提升你的${ingredient.benefit.split('，')[1]}，对你的${topicNames[selectedTopic]}运势有积极的促进作用。</p>
+                    </div>
+                    
+                    <div class="bg-white/20 rounded-xl p-4">
+                        <h5 class="font-bold text-lg mb-2">🌟 综合增运建议</h5>
+                        <p>今日食用${ingredient.name}，能够为你带来${Math.floor(Math.random() * 5) + 5}点运势加成。</p>
+                        <p>建议搭配今日其他幸运食材一同食用，效果更佳。同时穿着${todayFortune.luckyColor}色衣物，携带数字${todayFortune.luckyNumber}相关物品，能够进一步增强今日的${topicNames[selectedTopic]}运势。</p>
+                    </div>
+                </div>
+            `;
+            
+            analysisContent.innerHTML = analysis;
+            analysisArea.classList.remove('hidden');
+            
+            // 滚动到分析区域
+            analysisArea.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // 重置所有状态
+        function resetAll() {
+            currentStep = 1;
+            selectedTopic = null;
+            userQuestion = "";
+            selectedSpread = "single";
+            shuffledCards = [];
+            selectedCards = [];
+            todayFortune = null;
+            luckyIngredients = [];
+            
+            // 重置UI
+            updateStepIndicator();
+            step1Area.classList.remove('hidden');
+            step2Area.classList.add('hidden');
+            step3Area.classList.add('hidden');
+            step4Area.classList.add('hidden');
+            step5Area.classList.add('hidden');
+            analysisArea.classList.add('hidden');
+            
+            // 重置按钮
+            topicBtns.forEach(b => b.classList.remove('active'));
+            spreadBtns.forEach(b => b.classList.remove('active'));
+            spreadBtns[0].classList.add('active');
+            userQuestionInput.value = "";
+            nextStep1Btn.disabled = true;
+            
+            // 重置洗牌按钮
+            shuffleBtn.textContent = "🌀 点击洗牌";
+            shuffleBtn.onclick = startShuffle;
+            shuffleHint.textContent = "点击按钮开始洗牌，让能量与牌连接";
+            shuffleBtn.disabled = false;
+        }
+        
+        // 启动应用
+        init();
+    </script>
+</body>
+</html>
