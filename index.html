@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活动开启查询客户端</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,Microsoft YaHei}
+        body{min-height:100vh;padding:24px;background:linear-gradient(180deg,#0f172a 0%,#111827 45%,#1e293b 100%);color:#e5e7eb}
+        .app-shell{max-width:1460px;margin:0 auto;border:1px solid #334155;border-radius:22px;background:#0b1220;box-shadow:0 24px 80px rgba(15,23,42,.45);overflow:hidden}
+        .titlebar{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;padding:24px 28px;border-bottom:1px solid #1e293b;background:linear-gradient(135deg,#111827,#0f172a 60%,#172554)}
+        .title-main h1{font-size:30px;line-height:1.2;color:#f8fafc}
+        .title-main p{margin-top:10px;color:#94a3b8;line-height:1.7}
+        .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:#172554;color:#bfdbfe;font-size:12px;margin-bottom:14px}
+        .eyebrow::before{content:'';width:8px;height:8px;border-radius:50%;background:#38bdf8;box-shadow:0 0 12px rgba(56,189,248,.8)}
+        .title-meta{display:grid;gap:10px;min-width:220px}
+        .meta-chip{padding:12px 14px;border-radius:14px;background:rgba(15,23,42,.78);border:1px solid #334155;color:#cbd5e1;font-size:13px;line-height:1.7}
+        .app-body{display:grid;grid-template-columns:minmax(380px,460px) minmax(0,1fr);gap:0;min-height:calc(100vh - 120px)}
+        .sidebar{padding:24px;border-right:1px solid #1e293b;background:#0f172a;display:grid;gap:22px;align-content:start}
+        .main{padding:24px;background:#111827;display:grid;gap:22px;align-content:start}
+        .card{background:#111c2f;border:1px solid #23314a;border-radius:18px;padding:22px;box-shadow:0 10px 30px rgba(2,6,23,.18)}
+        .card h2{margin-bottom:16px;font-size:20px;color:#f8fafc}
+        .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+        .field{position:relative}
+        .field.hidden{display:none}
+        .field label{display:block;font-weight:600;margin-bottom:8px;color:#dbeafe}
+        .field input,.field select{width:100%;padding:11px 12px;border:1px solid #334155;border-radius:10px;font-size:15px;outline:none;background:#0b1220;color:#e5e7eb}
+        .field input:focus,.field select:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(96,165,250,.15)}
+        .field input::placeholder{color:#64748b}
+        .suggest-box{position:absolute;left:0;right:0;top:100%;margin-top:6px;max-height:240px;overflow:auto;background:#0b1220;border:1px solid #334155;border-radius:12px;box-shadow:0 18px 36px rgba(2,6,23,.45);z-index:20;display:none}
+        .suggest-item{padding:10px 12px;font-size:14px;color:#cbd5e1;cursor:pointer}
+        .suggest-item:hover,.suggest-item.active{background:#172554;color:#dbeafe}
+        .btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+        button{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;padding:10px 18px;border-radius:10px;cursor:pointer;font-size:15px}
+        button:hover{filter:brightness(1.05)}
+        button.secondary{background:#162235;color:#bfdbfe;border:1px solid #2b3c57}
+        button.secondary:hover{background:#1d2d44}
+        .status{padding:14px 16px;border-radius:12px;background:#0b1220;border:1px solid #23314a;line-height:1.7;white-space:pre-wrap;color:#cbd5e1}
+        .status.error{background:#2a1215;border-color:#7f1d1d;color:#fecaca}
+        .status.ok{background:#0f2418;border-color:#166534;color:#bbf7d0}
+        .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:16px}
+        .meta-item{background:#0b1220;border:1px solid #23314a;border-radius:12px;padding:14px}
+        .meta-item strong{display:block;color:#f8fafc;margin-bottom:6px}
+        .result-list{display:grid;gap:12px}
+        .result-item{border:1px solid #23314a;border-radius:14px;padding:15px 16px;background:#0b1220}
+        .result-item .title{font-weight:700;color:#f8fafc;margin-bottom:6px}
+        .result-item .sub{color:#cbd5e1;font-size:14px;line-height:1.7}
+        .result-item .sub.past{color:#fca5a5;font-weight:600}
+        .tag{display:inline-block;padding:2px 8px;border-radius:999px;background:#1d4ed8;color:#dbeafe;font-size:12px;margin-left:8px}
+        .match-list{margin-top:12px;padding-left:20px;line-height:1.8;color:#cbd5e1}
+        .muted{color:#94a3b8}
+        .empty{padding:18px;border:1px dashed #334155;border-radius:14px;color:#94a3b8;background:#0b1220}
+        .panel-note{font-size:13px;line-height:1.7;color:#94a3b8;margin-top:12px}
+        .footer-bar{padding:14px 24px;border-top:1px solid #1e293b;background:#0b1220;color:#64748b;font-size:13px}
+        @media (max-width:1080px){
+            body{padding:14px}
+            .app-body{grid-template-columns:1fr}
+            .sidebar{border-right:none;border-bottom:1px solid #1e293b}
+        }
+        @media (max-width:720px){
+            .titlebar{padding:20px;flex-direction:column}
+            .sidebar,.main{padding:16px}
+            .card{padding:18px}
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <div class="titlebar">
+            <div class="title-main">
+                <div class="eyebrow">Local Standalone Build</div>
+                <h1>活动开启查询客户端</h1>
+                <p>从原站点页面独立拆出，保留本地导入与查询逻辑，后续可以单独维护这个目录，不再依赖对方主页导航和站点结构。</p>
+            </div>
+            <div class="title-meta">
+                <div class="meta-chip">运行方式：直接打开当前目录下的 <code>index.html</code></div>
+                <div class="meta-chip">维护方式：这个目录可单独初始化 Git 仓库，后续只维护这块工具</div>
+            </div>
+        </div>
+
+        <div class="app-body">
+            <aside class="sidebar">
+                <div class="card">
+                    <h2>导入与筛选</h2>
+                    <div class="grid">
+                        <div class="field">
+                            <label for="xmlFile">活动配置表</label>
+                            <input id="xmlFile" type="file" accept=".xml">
+                        </div>
+                        <div class="field">
+                            <label for="projectSelect">项目</label>
+                            <select id="projectSelect"></select>
+                        </div>
+                        <div class="field">
+                            <label for="serverSelect">服务器</label>
+                            <select id="serverSelect"></select>
+                        </div>
+                        <div class="field hidden" id="customServerTimeField">
+                            <label for="customServerTimeInput">自定义开服时间（北京时间）</label>
+                            <input id="customServerTimeInput" type="datetime-local" step="60">
+                        </div>
+                        <div class="field">
+                            <label for="keyword">活动名称/类型</label>
+                            <input id="keyword" placeholder="例如：疯狂厨房 / 怪物攻城 / 系列礼包 / 打野宝藏" autocomplete="off" autocapitalize="off" spellcheck="false">
+                            <div id="activitySuggestions" class="suggest-box"></div>
+                        </div>
+                        <div class="field">
+                            <label for="activityIndexSelect">活动索引</label>
+                            <select id="activityIndexSelect">
+                                <option value="">请先输入活动名称并查询</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="characterCreateDate">创角日期（创角当天0点活动用）</label>
+                            <input id="characterCreateDate" type="date">
+                        </div>
+                    </div>
+                    <div class="btn-row">
+                        <button id="queryBtn" type="button">开始查询</button>
+                    </div>
+                    <div class="panel-note">这个版本不依赖原站点导航，作为单独客户端页面使用。</div>
+                </div>
+
+                <div class="card">
+                    <h2>查询状态</h2>
+                    <div id="statusBox" class="status">请先导入本地活动配置表。</div>
+                    <div class="meta">
+                        <div class="meta-item">
+                            <strong>当前北京时间</strong>
+                            <div id="nowText">-</div>
+                        </div>
+                        <div class="meta-item">
+                            <strong>已载入活动数量</strong>
+                            <div id="activityCount">0</div>
+                        </div>
+                        <div class="meta-item">
+                            <strong>匹配规则数量</strong>
+                            <div id="matchCount">0</div>
+                        </div>
+                    </div>
+                    <ul id="matchList" class="match-list"></ul>
+                </div>
+            </aside>
+
+            <main class="main">
+                <div class="card">
+                    <h2>开启结果</h2>
+                    <div id="resultList" class="result-list">
+                        <div class="empty">导入配置表并输入活动关键字后，这里会显示未来开启日期。</div>
+                    </div>
+                    <div class="btn-row">
+                        <button id="moreBtn" type="button" class="secondary" style="display:none">更多</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <div class="footer-bar">Standalone Activity Schedule Client</div>
+    </div>
+
+    <script>
+        const DAY_MS = 24 * 60 * 60 * 1000;
+        const BJ_OFFSET_MS = 8 * 60 * 60 * 1000;
+        const WEEK_NAMES = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+        const WEEKDAY_TO_JS = {1:1,2:2,3:3,4:4,5:5,6:6,7:0};
+        const PROJECTS = {
+            fl: {
+                name: 'FL项目',
+                servers: {
+                    s1: {name: '外网1服', openMs: createBjTimestamp(2025, 9, 26, 11, 0, 0)},
+                    s2: {name: '外网2服', openMs: createBjTimestamp(2025, 11, 25, 14, 0, 0)},
+                    s3: {name: '外网3服', openMs: createBjTimestamp(2026, 4, 27, 13, 0, 0)},
+                    s4: {name: '外网4服', openMs: createBjTimestamp(2026, 7, 1, 13, 0, 0)},
+                    s5: {name: '外网5服', openMs: createBjTimestamp(2026, 8, 24, 5, 0, 0)}
+                }
+            }
+        };
+
+        const fieldMap = {
+            Id: 'id',
+            Index: 'indexName',
+            'Code:C': 'codeName',
+            ActivityName: 'activityName',
+            ActivityType: 'activityType',
+            ActivitySwitch: 'activitySwitch',
+            DisplayPersonalCondition: 'displayPersonalCondition',
+            DisplayPersonalConditionType: 'displayPersonalConditionType',
+            DisplayPersonalConditionValue: 'displayPersonalConditionValue',
+            JoinPersonalCondition: 'joinPersonalCondition',
+            JoinPersonalConditionType: 'joinPersonalConditionType',
+            JoinPersonalConditionValue: 'joinPersonalConditionValue',
+            'JoinUnlockTips:C': 'joinUnlockTips',
+            TimeType: 'timeType',
+            StartTime: 'startTime',
+            EndTime: 'endTime',
+            DayOfWeek: 'dayOfWeek',
+            OpenNumberWeek: 'openNumberWeek',
+            DelayShowTime: 'delayShowTime',
+            ResetPeriod: 'resetPeriod',
+            ResetPeriodTimes: 'resetPeriodTimes'
+        };
+
+        const appState = {
+            activities: [],
+            currentResultCount: 5,
+            suggestionValues: [],
+            activeSuggestionIndex: -1
+        };
+
+        const xmlFileInput = document.getElementById('xmlFile');
+        const projectSelect = document.getElementById('projectSelect');
+        const keywordInput = document.getElementById('keyword');
+        const activityIndexSelect = document.getElementById('activityIndexSelect');
+        const serverSelect = document.getElementById('serverSelect');
+        const customServerTimeField = document.getElementById('customServerTimeField');
+        const customServerTimeInput = document.getElementById('customServerTimeInput');
+        const characterCreateDateInput = document.getElementById('characterCreateDate');
+        const queryBtn = document.getElementById('queryBtn');
+        const moreBtn = document.getElementById('moreBtn');
+        const statusBox = document.getElementById('statusBox');
+        const nowText = document.getElementById('nowText');
+        const activityCount = document.getElementById('activityCount');
+        const matchCount = document.getElementById('matchCount');
+        const matchList = document.getElementById('matchList');
+        const resultList = document.getElementById('resultList');
+        const suggestions = document.getElementById('activitySuggestions');
+
+        xmlFileInput.addEventListener('change', handleFileChange);
+        projectSelect.addEventListener('change', refreshServerOptions);
+        serverSelect.addEventListener('change', handleServerChange);
+        keywordInput.addEventListener('input', handleFilterInput);
+        keywordInput.addEventListener('focus', renderSuggestionList);
+        keywordInput.addEventListener('keydown', handleSuggestionKeydown);
+        activityIndexSelect.addEventListener('change', runQuery);
+        queryBtn.addEventListener('click', runQuery);
+        moreBtn.addEventListener('click', handleLoadMore);
+        document.addEventListener('click', handleDocumentClick);
+
+        initProjectOptions();
+        updateNowText();
+        setInterval(updateNowText, 1000);
+
+        function initProjectOptions(){
+            projectSelect.innerHTML = Object.entries(PROJECTS).map(([key, project]) => {
+                return `<option value="${escapeHtml(key)}">${escapeHtml(project.name)}</option>`;
+            }).join('');
+            projectSelect.value = 'fl';
+            refreshServerOptions();
+        }
+
+        function refreshServerOptions(){
+            const project = PROJECTS[projectSelect.value] || PROJECTS.fl;
+            serverSelect.innerHTML = Object.entries(project.servers).map(([key, server]) => {
+                return `<option value="${escapeHtml(key)}">${escapeHtml(server.name)} | ${escapeHtml(formatBjDateTime(server.openMs).slice(0, 16))}</option>`;
+            }).join('') + '<option value="custom">自定义开服时间</option>';
+            if(project.servers.s5){
+                serverSelect.value = 's5';
+            } else if(project.servers.s4){
+                serverSelect.value = 's4';
+            }
+            handleServerChange();
+        }
+
+        function handleServerChange(){
+            const isCustom = serverSelect.value === 'custom';
+            customServerTimeField.classList.toggle('hidden', !isCustom);
+        }
+
+        async function handleFileChange(event){
+            const file = event.target.files && event.target.files[0];
+            if(!file){
+                return;
+            }
+
+            setStatus('正在读取配置表...', '');
+            try{
+                const text = await file.text();
+                const activities = parseActivityXml(text);
+                appState.activities = activities;
+                activityCount.textContent = String(activities.length);
+                refreshSuggestions(activities);
+                resetActivityIndexOptions();
+                toggleMoreButton(false);
+                setStatus(`导入成功：${file.name}\n共解析到 ${activities.length} 条活动规则。`, 'ok');
+                runQuery();
+            }catch(error){
+                console.error(error);
+                appState.activities = [];
+                activityCount.textContent = '0';
+                matchCount.textContent = '0';
+                matchList.innerHTML = '';
+                resetActivityIndexOptions();
+                toggleMoreButton(false);
+                renderEmpty('配置表解析失败，请确认导入的是 H_活动.xml。');
+                setStatus(`解析失败：${error.message}`, 'error');
+            }
+        }
+
+        function resetActivityIndexOptions(text){
+            activityIndexSelect.innerHTML = `<option value="">${escapeHtml(text || '请先输入活动名称并查询')}</option>`;
+        }
+
+        function handleFilterInput(){
+            renderSuggestionList();
+            syncActivityIndexOptions();
+        }
+
+        function handleLoadMore(){
+            appState.currentResultCount += 5;
+            runQuery(false);
+        }
+
+        function parseActivityXml(text){
+            const xml = new DOMParser().parseFromString(text, 'application/xml');
+            const parserError = xml.getElementsByTagName('parsererror')[0];
+            if(parserError){
+                throw new Error('XML 格式不正确，浏览器无法解析。');
+            }
+
+            const worksheet = Array.from(xml.getElementsByTagNameNS('urn:schemas-microsoft-com:office:spreadsheet', 'Worksheet'))
+                .find(node => getAttr(node, 'Name') === 'Activity');
+            if(!worksheet){
+                throw new Error('未找到 Activity 工作表。');
+            }
+
+            const table = worksheet.getElementsByTagNameNS('urn:schemas-microsoft-com:office:spreadsheet', 'Table')[0];
+            if(!table){
+                throw new Error('未找到 Activity 表格。');
+            }
+
+            const rows = Array.from(table.getElementsByTagNameNS('urn:schemas-microsoft-com:office:spreadsheet', 'Row'));
+            if(rows.length < 4){
+                throw new Error('Activity 表数据不足。');
+            }
+
+            const headers = rowToValues(rows[1]);
+            const dataRows = rows.slice(4);
+            const activities = [];
+
+            dataRows.forEach(row => {
+                const values = rowToValues(row, headers.length);
+                if(!values.length || !String(values[0] || '').trim()){
+                    return;
+                }
+
+                const item = {};
+                headers.forEach((header, index) => {
+                    if(!fieldMap[header]){
+                        return;
+                    }
+                    item[fieldMap[header]] = normalizeValue(values[index]);
+                });
+
+                if(!item.timeType || !item.activityName){
+                    return;
+                }
+
+                activities.push(item);
+            });
+
+            return activities;
+        }
+
+        function rowToValues(row, size){
+            const cells = Array.from(row.getElementsByTagNameNS('urn:schemas-microsoft-com:office:spreadsheet', 'Cell'));
+            const values = [];
+            let cursor = 0;
+
+            cells.forEach(cell => {
+                const rawIndex = Number(getAttr(cell, 'Index'));
+                if(Number.isFinite(rawIndex) && rawIndex > 0){
+                    cursor = rawIndex - 1;
+                }
+                const data = cell.getElementsByTagNameNS('urn:schemas-microsoft-com:office:spreadsheet', 'Data')[0];
+                values[cursor] = data ? data.textContent.trim() : '';
+                cursor += 1;
+            });
+
+            if(size){
+                for(let i = 0; i < size; i += 1){
+                    if(values[i] === undefined){
+                        values[i] = '';
+                    }
+                }
+            }
+
+            return values;
+        }
+
+        function getAttr(node, localName){
+            if(!node || !node.attributes){
+                return '';
+            }
+            for(const attr of Array.from(node.attributes)){
+                if(attr.localName === localName || attr.name === localName || attr.name.endsWith(':' + localName)){
+                    return attr.value;
+                }
+            }
+            return '';
+        }
+
+        function normalizeValue(value){
+            return String(value || '').trim();
+        }
+
+        function refreshSuggestions(activities){
+            const names = new Set();
+            activities.forEach(item => {
+                [item.activityName, item.activityType, item.indexName, item.codeName].forEach(text => {
+                    if(text){
+                        names.add(text);
+                    }
+                });
+            });
+            appState.suggestionValues = Array.from(names).sort((a, b) => a.localeCompare(b, 'zh-CN')).slice(0, 800);
+            renderSuggestionList();
+        }
+
+        function renderSuggestionList(){
+            const keyword = keywordInput.value.trim().toLowerCase();
+            const items = appState.suggestionValues
+                .filter(value => !keyword || value.toLowerCase().includes(keyword))
+                .slice(0, 12);
+
+            appState.activeSuggestionIndex = items.length ? 0 : -1;
+
+            if(!items.length || document.activeElement !== keywordInput){
+                hideSuggestions();
+                return;
+            }
+
+            suggestions.innerHTML = items.map((value, index) => {
+                return `<div class="suggest-item${index === appState.activeSuggestionIndex ? ' active' : ''}" data-value="${escapeHtml(value)}">${escapeHtml(value)}</div>`;
+            }).join('');
+            suggestions.style.display = 'block';
+
+            Array.from(suggestions.querySelectorAll('.suggest-item')).forEach((node, index) => {
+                node.addEventListener('mousedown', event => {
+                    event.preventDefault();
+                    applySuggestion(items[index]);
+                });
+            });
+        }
+
+        function hideSuggestions(){
+            suggestions.style.display = 'none';
+            suggestions.innerHTML = '';
+            appState.activeSuggestionIndex = -1;
+        }
+
+        function applySuggestion(value){
+            keywordInput.value = value;
+            hideSuggestions();
+            syncActivityIndexOptions();
+        }
+
+        function handleSuggestionKeydown(event){
+            const visibleItems = Array.from(suggestions.querySelectorAll('.suggest-item'));
+            if(!visibleItems.length){
+                return;
+            }
+
+            if(event.key === 'ArrowDown'){
+                event.preventDefault();
+                appState.activeSuggestionIndex = Math.min(appState.activeSuggestionIndex + 1, visibleItems.length - 1);
+                updateSuggestionActiveState(visibleItems);
+                return;
+            }
+
+            if(event.key === 'ArrowUp'){
+                event.preventDefault();
+                appState.activeSuggestionIndex = Math.max(appState.activeSuggestionIndex - 1, 0);
+                updateSuggestionActiveState(visibleItems);
+                return;
+            }
+
+            if(event.key === 'Enter' && appState.activeSuggestionIndex >= 0){
+                event.preventDefault();
+                applySuggestion(visibleItems[appState.activeSuggestionIndex].textContent || '');
+                return;
+            }
+
+            if(event.key === 'Escape'){
+                hideSuggestions();
+            }
+        }
+
+        function updateSuggestionActiveState(nodes){
+            nodes.forEach((node, index) => {
+                node.classList.toggle('active', index === appState.activeSuggestionIndex);
+            });
+            const activeNode = nodes[appState.activeSuggestionIndex];
+            if(activeNode){
+                activeNode.scrollIntoView({block: 'nearest'});
+            }
+        }
+
+        function handleDocumentClick(event){
+            if(event.target === keywordInput || suggestions.contains(event.target)){
+                return;
+            }
+            hideSuggestions();
+        }
+
+        function getMatchedActivities(){
+            const keyword = keywordInput.value.trim().toLowerCase();
+            return appState.activities.filter(item => {
+                if(item.activitySwitch && item.activitySwitch !== '开启'){
+                    return false;
+                }
+
+                const matchKeyword = !keyword || [item.activityName, item.activityType, item.indexName, item.codeName]
+                    .join(' ')
+                    .toLowerCase()
+                    .includes(keyword);
+
+                return matchKeyword;
+            });
+        }
+
+        function syncActivityIndexOptions(){
+            if(!appState.activities.length){
+                resetActivityIndexOptions();
+                return [];
+            }
+            const selectedIndexValue = activityIndexSelect.value;
+            const matchedActivities = getMatchedActivities();
+            updateActivityIndexOptions(matchedActivities, selectedIndexValue);
+            return matchedActivities;
+        }
+
+        function runQuery(resetCount = true){
+            const nowMs = Date.now();
+            if(resetCount){
+                appState.currentResultCount = 5;
+            }
+            const resultCount = appState.currentResultCount;
+            const serverOpenMs = getSelectedServerOpenMs();
+            const characterCreateMs = parseBjDateTime(characterCreateDateInput.value);
+
+            if(!appState.activities.length){
+                matchCount.textContent = '0';
+                matchList.innerHTML = '';
+                resetActivityIndexOptions();
+                renderEmpty('请先导入本地 H_活动.xml。');
+                toggleMoreButton(false);
+                return;
+            }
+
+            const matchedActivities = syncActivityIndexOptions();
+
+            const filteredActivities = activityIndexSelect.value
+                ? matchedActivities.filter(item => buildActivityOptionValue(item) === activityIndexSelect.value)
+                : matchedActivities;
+
+            const requiresServerOpenTime = filteredActivities.some(item => ['相对开服时间', '开服周几开启', '开服第几周周几'].includes(item.timeType));
+            if(requiresServerOpenTime && !Number.isFinite(serverOpenMs)){
+                renderEmpty('当前活动依赖开服时间，请先选择服务器或填写自定义开服时间。');
+                setStatus('当前查询包含依赖开服时间的活动，请先补充有效的开服时间。', 'error');
+                toggleMoreButton(false);
+                return;
+            }
+
+            matchCount.textContent = String(filteredActivities.length);
+            renderMatchedRules(filteredActivities);
+
+            if(!matchedActivities.length){
+                renderEmpty('没有匹配到活动，请换一个关键字试试。');
+                setStatus('当前配置表已导入，但没有命中活动关键字。', '');
+                toggleMoreButton(false);
+                return;
+            }
+
+            if(!filteredActivities.length){
+                renderEmpty('当前活动索引没有匹配到规则，请重新选择。');
+                setStatus('已匹配到活动名称，但当前活动索引未命中规则。', 'error');
+                toggleMoreButton(false);
+                return;
+            }
+
+            const requiresCharacterDate = filteredActivities.some(item => item.timeType === '创角当天0点');
+            if(requiresCharacterDate && !Number.isFinite(characterCreateMs)){
+                renderEmpty('匹配到了创角当天0点活动，请先填写创角日期。');
+                setStatus('当前查询包含“创角当天0点”活动，请先补充创角日期。', 'error');
+                toggleMoreButton(false);
+                return;
+            }
+
+            const occurrenceGroups = buildOccurrenceGroups(filteredActivities, serverOpenMs, characterCreateMs, nowMs, resultCount);
+
+            if(!occurrenceGroups.some(group => group.occurrences.length)){
+                renderEmpty('匹配到了活动规则，但在未来范围内没有可展示的开启日期。');
+                setStatus(`已匹配 ${filteredActivities.length} 条规则，但没有找到未来开启日期。`, '');
+                toggleMoreButton(false);
+                return;
+            }
+
+            renderOccurrences(occurrenceGroups, nowMs);
+            toggleMoreButton(occurrenceGroups.some(group => group.hasMore));
+            setStatus(`已匹配 ${filteredActivities.length} 条规则，已按北京时间输出最近开启日期。`, 'ok');
+        }
+
+        function toggleMoreButton(visible){
+            moreBtn.style.display = visible ? 'inline-block' : 'none';
+        }
+
+        function getSelectedServerOpenMs(){
+            if(serverSelect.value === 'custom'){
+                return parseBjDateTimeInput(customServerTimeInput.value);
+            }
+            const currentProject = PROJECTS[projectSelect.value] || PROJECTS.fl;
+            return currentProject.servers[serverSelect.value]?.openMs;
+        }
+
+        function updateActivityIndexOptions(items, preferredValue){
+            if(!items.length){
+                resetActivityIndexOptions(keywordInput.value.trim() ? '未有该活动' : '请先输入活动名称并查询');
+                return;
+            }
+
+            const options = ['<option value="">全部匹配索引</option>'];
+            const unique = new Map();
+            items.forEach(item => {
+                const value = buildActivityOptionValue(item);
+                if(unique.has(value)){
+                    return;
+                }
+                unique.set(value, `${item.indexName || '-'} | ${item.activityName || '-'} | ${item.codeName || '-'} | Id:${item.id || '-'}`);
+            });
+            unique.forEach((text, value) => {
+                options.push(`<option value="${escapeHtml(value)}">${escapeHtml(text)}</option>`);
+            });
+            activityIndexSelect.innerHTML = options.join('');
+
+            const canRestore = items.some(item => buildActivityOptionValue(item) === preferredValue);
+            activityIndexSelect.value = canRestore ? preferredValue : '';
+        }
+
+        function buildActivityOptionValue(item){
+            return [item.indexName, item.codeName, item.activityName].join('|');
+        }
+
+        function buildOccurrenceGroups(items, serverOpenMs, characterCreateMs, nowMs, resultCount){
+            const occurrences = items.flatMap(item => buildDisplayOccurrences(item, serverOpenMs, characterCreateMs, resultCount + 1));
+            return [{
+                hasMore: occurrences.length > resultCount,
+                occurrences: occurrences.sort((a, b) => a.startMs - b.startMs).slice(0, resultCount)
+            }];
+        }
+
+        function buildOccurrences(item, serverOpenMs, characterCreateMs, nowMs, limit){
+            const type = item.timeType;
+            if(type === '固定时间'){
+                return buildFixedDateOccurrences(item, nowMs);
+            }
+            if(type === '相对开服时间'){
+                return buildOpenServiceOccurrences(item, serverOpenMs, nowMs);
+            }
+            if(type === '创角当天0点'){
+                return buildCharacterCreate0Occurrences(item, characterCreateMs, nowMs);
+            }
+            if(type === '开服周几开启'){
+                return buildLaunchWeekOccurrences(item, serverOpenMs, nowMs, limit);
+            }
+            if(type === '开服第几周周几'){
+                return buildOpenNumberWeekOccurrences(item, serverOpenMs, nowMs, limit);
+            }
+            if(type === '永久开放'){
+                return [{
+                    startMs: nowMs,
+                    endMs: Infinity,
+                    item,
+                    note: '永久开放'
+                }];
+            }
+            return [];
+        }
+
+        function buildDisplayOccurrences(item, serverOpenMs, characterCreateMs, limit){
+            const type = item.timeType;
+
+            if(type === '固定时间'){
+                return buildFixedDateTimeline(item);
+            }
+            if(type === '相对开服时间'){
+                return buildRangeTimeline(item, startOfBjDay(serverOpenMs), '相对开服时间');
+            }
+            if(type === '创角当天0点'){
+                if(!Number.isFinite(characterCreateMs)){
+                    return [];
+                }
+                return buildRangeTimeline(item, startOfBjDay(characterCreateMs), '基于创角日期计算');
+            }
+            if(type === '开服周几开启'){
+                const offsetDays = Math.max(0, toInt(item.startTime, 1) - 1);
+                const weekday = toJsWeekday(item.dayOfWeek);
+                const durationDays = Math.max(1, toInt(item.endTime, 1));
+                const periodDays = Math.max(0, toInt(item.resetPeriod, 0));
+                const maxTimes = Math.max(0, toInt(item.resetPeriodTimes, 0));
+                if(weekday === null){
+                    return [];
+                }
+                const firstAnchor = startOfBjDay(serverOpenMs) + offsetDays * DAY_MS;
+                return buildAnchoredWeeklyTimeline(item, firstAnchor, weekday, durationDays, periodDays, maxTimes, limit);
+            }
+            if(type === '开服第几周周几'){
+                const openWeek = Math.max(1, toInt(item.openNumberWeek, 1));
+                const weekday = toJsWeekday(item.dayOfWeek);
+                const durationDays = Math.max(1, toInt(item.endTime, 1));
+                const periodDays = Math.max(0, toInt(item.resetPeriod, 0));
+                const maxTimes = Math.max(0, toInt(item.resetPeriodTimes, 0));
+                if(weekday === null){
+                    return [];
+                }
+                const firstAnchor = startOfBjWeek(serverOpenMs) + (openWeek - 1) * 7 * DAY_MS;
+                return buildAnchoredWeeklyTimeline(item, firstAnchor, weekday, durationDays, periodDays, maxTimes, limit);
+            }
+            if(type === '永久开放'){
+                return [{
+                    startMs: Number.NEGATIVE_INFINITY,
+                    endMs: Infinity,
+                    item,
+                    note: '永久开放'
+                }];
+            }
+
+            return [];
+        }
+
+        function buildFixedDateTimeline(item){
+            const startMs = parseBjDateTime(item.startTime);
+            const endMs = parseBjDateTime(item.endTime) || startMs;
+            if(!Number.isFinite(startMs)){
+                return [];
+            }
+            return [{startMs, endMs, item}];
+        }
+
+        function buildRangeTimeline(item, baseDayStart, note){
+            const startDay = toInt(item.startTime, NaN);
+            const endDay = toInt(item.endTime, startDay);
+            if(!Number.isFinite(startDay) || !Number.isFinite(baseDayStart)){
+                return [];
+            }
+            const startOffsetDays = Math.max(0, startDay - 1);
+            const endOffsetDays = Math.max(startDay, endDay);
+            const startMs = baseDayStart + startOffsetDays * DAY_MS;
+            const endMs = baseDayStart + endOffsetDays * DAY_MS - 1000;
+            return [{startMs, endMs, item, note}];
+        }
+
+        function buildPastOccurrence(item, serverOpenMs, characterCreateMs, nowMs){
+            const type = item.timeType;
+            if(type === '固定时间'){
+                const startMs = parseBjDateTime(item.startTime);
+                const endMs = parseBjDateTime(item.endTime) || startMs;
+                if(Number.isFinite(startMs) && endMs < nowMs){
+                    return {startMs, endMs, item, isPast: true, note: '已结束'};
+                }
+                return null;
+            }
+
+            if(type === '相对开服时间'){
+                return buildPastRangeOccurrence(item, startOfBjDay(serverOpenMs), nowMs, '已结束');
+            }
+
+            if(type === '创角当天0点'){
+                if(!Number.isFinite(characterCreateMs)){
+                    return null;
+                }
+                return buildPastRangeOccurrence(item, startOfBjDay(characterCreateMs), nowMs, '基于创角日期计算 | 已结束');
+            }
+
+            if(type === '开服周几开启'){
+                const offsetDays = Math.max(0, toInt(item.startTime, 1) - 1);
+                const weekday = toJsWeekday(item.dayOfWeek);
+                const durationDays = Math.max(1, toInt(item.endTime, 1));
+                const periodDays = Math.max(0, toInt(item.resetPeriod, 0));
+                const maxTimes = Math.max(0, toInt(item.resetPeriodTimes, 0));
+                if(weekday === null){
+                    return null;
+                }
+                const firstAnchor = startOfBjDay(serverOpenMs) + offsetDays * DAY_MS;
+                return buildPastAnchoredWeeklyOccurrence(item, firstAnchor, weekday, durationDays, periodDays, maxTimes, nowMs);
+            }
+
+            if(type === '开服第几周周几'){
+                const openWeek = Math.max(1, toInt(item.openNumberWeek, 1));
+                const weekday = toJsWeekday(item.dayOfWeek);
+                const durationDays = Math.max(1, toInt(item.endTime, 1));
+                const periodDays = Math.max(0, toInt(item.resetPeriod, 0));
+                const maxTimes = Math.max(0, toInt(item.resetPeriodTimes, 0));
+                if(weekday === null){
+                    return null;
+                }
+                const firstAnchor = startOfBjWeek(serverOpenMs) + (openWeek - 1) * 7 * DAY_MS;
+                return buildPastAnchoredWeeklyOccurrence(item, firstAnchor, weekday, durationDays, periodDays, maxTimes, nowMs);
+            }
+
+            return null;
+        }
+
+        function buildPastRangeOccurrence(item, baseDayStart, nowMs, note){
+            const startDay = toInt(item.startTime, NaN);
+            const endDay = toInt(item.endTime, startDay);
+            if(!Number.isFinite(startDay) || !Number.isFinite(baseDayStart)){
+                return null;
+            }
+            const startOffsetDays = Math.max(0, startDay - 1);
+            const endOffsetDays = Math.max(startDay, endDay);
+            const startMs = baseDayStart + startOffsetDays * DAY_MS;
+            const endMs = baseDayStart + endOffsetDays * DAY_MS - 1000;
+            if(endMs < nowMs){
+                return {startMs, endMs, item, isPast: true, note};
+            }
+            return null;
+        }
+
+        function buildPastRecurringOccurrence(item, firstStart, durationDays, periodDays, maxTimes, nowMs){
+            if(!Number.isFinite(firstStart)){
+                return null;
+            }
+
+            let latest = null;
+            let startMs = firstStart;
+            let endMs = firstStart + durationDays * DAY_MS - 1000;
+            const loopLimit = maxTimes > 0 ? maxTimes + 1 : 200;
+            const safePeriodDays = periodDays > 0 ? periodDays : 0;
+
+            for(let i = 0; i < loopLimit; i += 1){
+                if(endMs < nowMs){
+                    latest = {startMs, endMs, item, isPast: true, note: '已结束'};
+                } else {
+                    break;
+                }
+                if(!safePeriodDays){
+                    break;
+                }
+                startMs += safePeriodDays * DAY_MS;
+                endMs += safePeriodDays * DAY_MS;
+                if(startMs > nowMs + 730 * DAY_MS){
+                    break;
+                }
+            }
+
+            return latest;
+        }
+
+        function buildPastAnchoredWeeklyOccurrence(item, firstAnchor, weekday, durationDays, periodDays, maxTimes, nowMs){
+            if(!Number.isFinite(firstAnchor)){
+                return null;
+            }
+
+            let latest = null;
+            let startMs = nextOrSameWeekday(firstAnchor, weekday);
+            const loopLimit = maxTimes > 0 ? maxTimes + 1 : 200;
+            const safePeriodDays = periodDays > 0 ? periodDays : 0;
+
+            for(let i = 0; i < loopLimit; i += 1){
+                const endMs = startMs + durationDays * DAY_MS - 1000;
+                if(endMs < nowMs){
+                    latest = {startMs, endMs, item, isPast: true, note: '已结束'};
+                } else {
+                    break;
+                }
+                if(!safePeriodDays){
+                    break;
+                }
+                startMs = getNextWeeklyCycleStart(startMs, weekday, safePeriodDays);
+                if(startMs > nowMs + 730 * DAY_MS){
+                    break;
+                }
+            }
+
+            return latest;
+        }
+
+        function buildFixedDateOccurrences(item, nowMs){
+            const startMs = parseBjDateTime(item.startTime);
+            const endMs = parseBjDateTime(item.endTime) || startMs;
+            if(!startMs || endMs < nowMs){
+                return [];
+            }
+            return [{startMs, endMs, item}];
+        }
+
+        function buildOpenServiceOccurrences(item, serverOpenMs, nowMs){
+            const startDay = toInt(item.startTime, NaN);
+            const endDay = toInt(item.endTime, startDay);
+            if(!Number.isFinite(startDay)){
+                return [];
+            }
+
+            const openDayStart = startOfBjDay(serverOpenMs);
+            const startOffsetDays = Math.max(0, startDay - 1);
+            const endOffsetDays = Math.max(startDay, endDay);
+            const startMs = openDayStart + startOffsetDays * DAY_MS;
+            const endMs = openDayStart + endOffsetDays * DAY_MS - 1000;
+            if(endMs < nowMs){
+                return [];
+            }
+            return [{startMs, endMs, item}];
+        }
+
+        function buildCharacterCreate0Occurrences(item, characterCreateMs, nowMs){
+            const startDay = toInt(item.startTime, NaN);
+            const endDay = toInt(item.endTime, startDay);
+            if(!Number.isFinite(startDay) || !Number.isFinite(characterCreateMs)){
+                return [];
+            }
+
+            const createDayStart = startOfBjDay(characterCreateMs);
+            const startOffsetDays = Math.max(0, startDay - 1);
+            const endOffsetDays = Math.max(startDay, endDay);
+            const startMs = createDayStart + startOffsetDays * DAY_MS;
+            const endMs = createDayStart + endOffsetDays * DAY_MS - 1000;
+            if(endMs < nowMs){
+                return [];
+            }
+            return [{startMs, endMs, item, note: '基于创角日期计算'}];
+        }
+
+        function buildLaunchWeekOccurrences(item, serverOpenMs, nowMs, limit){
+            const offsetDays = Math.max(0, toInt(item.startTime, 1) - 1);
+            const weekday = toJsWeekday(item.dayOfWeek);
+            const durationDays = Math.max(1, toInt(item.endTime, 1));
+            const periodDays = Math.max(0, toInt(item.resetPeriod, 0));
+            const maxTimes = Math.max(0, toInt(item.resetPeriodTimes, 0));
+            if(weekday === null){
+                return [];
+            }
+
+            const firstAnchor = startOfBjDay(serverOpenMs) + offsetDays * DAY_MS;
+            return buildAnchoredWeeklyRecurringList(item, firstAnchor, weekday, durationDays, periodDays, maxTimes, nowMs, limit);
+        }
+
+        function buildOpenNumberWeekOccurrences(item, serverOpenMs, nowMs, limit){
+            const openWeek = Math.max(1, toInt(item.openNumberWeek, 1));
+            const weekday = toJsWeekday(item.dayOfWeek);
+            const durationDays = Math.max(1, toInt(item.endTime, 1));
+            const periodDays = Math.max(0, toInt(item.resetPeriod, 0));
+            const maxTimes = Math.max(0, toInt(item.resetPeriodTimes, 0));
+            if(weekday === null){
+                return [];
+            }
+
+            const firstAnchor = startOfBjWeek(serverOpenMs) + (openWeek - 1) * 7 * DAY_MS;
+            return buildAnchoredWeeklyRecurringList(item, firstAnchor, weekday, durationDays, periodDays, maxTimes, nowMs, limit);
+        }
+
+        function getOpenNumberWeekStart(serverOpenMs, openWeek, weekday){
+            const weekAnchor = startOfBjWeek(serverOpenMs) + (openWeek - 1) * 7 * DAY_MS;
+            return nextOrSameWeekday(weekAnchor, weekday);
+        }
+
+        function buildAnchoredWeeklyRecurringList(item, firstAnchor, weekday, durationDays, periodDays, maxTimes, nowMs, limit){
+            if(!Number.isFinite(firstAnchor)){
+                return [];
+            }
+
+            const result = [];
+            let startMs = nextOrSameWeekday(firstAnchor, weekday);
+            const loopLimit = maxTimes > 0 ? maxTimes + 1 : 200;
+            const safePeriodDays = periodDays > 0 ? periodDays : 0;
+
+            for(let i = 0; i < loopLimit; i += 1){
+                const endMs = startMs + durationDays * DAY_MS - 1000;
+                if(endMs >= nowMs){
+                    result.push({startMs, endMs, item});
+                }
+                if(result.length >= limit){
+                    break;
+                }
+                if(!safePeriodDays){
+                    break;
+                }
+                startMs = getNextWeeklyCycleStart(startMs, weekday, safePeriodDays);
+                if(startMs > nowMs + 730 * DAY_MS){
+                    break;
+                }
+            }
+
+            return result;
+        }
+
+        function buildAnchoredWeeklyTimeline(item, firstAnchor, weekday, durationDays, periodDays, maxTimes, limit){
+            if(!Number.isFinite(firstAnchor)){
+                return [];
+            }
+
+            const result = [];
+            let startMs = nextOrSameWeekday(firstAnchor, weekday);
+            const loopLimit = maxTimes > 0 ? maxTimes + 1 : 200;
+            const safePeriodDays = periodDays > 0 ? periodDays : 0;
+
+            for(let i = 0; i < loopLimit; i += 1){
+                const endMs = startMs + durationDays * DAY_MS - 1000;
+                result.push({startMs, endMs, item});
+                if(result.length >= limit){
+                    break;
+                }
+                if(!safePeriodDays){
+                    break;
+                }
+                startMs = getNextWeeklyCycleStart(startMs, weekday, safePeriodDays);
+            }
+
+            return result;
+        }
+
+        function getNextWeeklyCycleStart(currentStartMs, weekday, periodDays){
+            const referenceMs = currentStartMs + Math.max(periodDays, 0) * DAY_MS;
+            let nextStartMs = nextOrSameWeekday(referenceMs, weekday);
+            while(nextStartMs <= currentStartMs){
+                nextStartMs += 7 * DAY_MS;
+            }
+            return nextStartMs;
+        }
+
+        function startOfBjWeek(ms){
+            const dayStart = startOfBjDay(ms);
+            const weekday = bjWeekday(dayStart);
+            const mondayOffset = (weekday + 6) % 7;
+            return dayStart - mondayOffset * DAY_MS;
+        }
+
+        function buildRecurringList(item, firstStart, durationDays, periodDays, maxTimes, nowMs, limit){
+            if(!Number.isFinite(firstStart)){
+                return [];
+            }
+            const result = [];
+            let startMs = firstStart;
+            let endMs = firstStart + durationDays * DAY_MS - 1000;
+            const loopLimit = maxTimes > 0 ? maxTimes + 1 : 200;
+            const safePeriodDays = periodDays > 0 ? periodDays : 0;
+
+            for(let i = 0; i < loopLimit; i += 1){
+                if(endMs >= nowMs){
+                    result.push({startMs, endMs, item});
+                }
+                if(result.length >= limit){
+                    break;
+                }
+                if(!safePeriodDays){
+                    break;
+                }
+                startMs += safePeriodDays * DAY_MS;
+                endMs += safePeriodDays * DAY_MS;
+                if(startMs > nowMs + 730 * DAY_MS){
+                    break;
+                }
+            }
+            return result;
+        }
+
+        function toInt(value, fallback){
+            const parsed = Number.parseInt(String(value || '').trim(), 10);
+            return Number.isFinite(parsed) ? parsed : fallback;
+        }
+
+        function toJsWeekday(value){
+            const parsed = toInt(value, NaN);
+            if(!Number.isFinite(parsed) || WEEKDAY_TO_JS[parsed] === undefined){
+                return null;
+            }
+            return WEEKDAY_TO_JS[parsed];
+        }
+
+        function nextOrSameWeekday(startMs, jsWeekday){
+            const dayStart = startOfBjDay(startMs);
+            const currentWeekday = bjWeekday(dayStart);
+            const delta = (jsWeekday - currentWeekday + 7) % 7;
+            return dayStart + delta * DAY_MS;
+        }
+
+        function createBjTimestamp(year, month, day, hour, minute, second){
+            return Date.UTC(year, month - 1, day, hour - 8, minute, second);
+        }
+
+        function parseBjDateTime(text){
+            const match = String(text || '').trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/);
+            if(!match){
+                return NaN;
+            }
+            return createBjTimestamp(
+                Number(match[1]),
+                Number(match[2]),
+                Number(match[3]),
+                Number(match[4] || 0),
+                Number(match[5] || 0),
+                Number(match[6] || 0)
+            );
+        }
+
+        function parseBjDateTimeInput(text){
+            const normalized = String(text || '').trim();
+            if(!normalized){
+                return NaN;
+            }
+            const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+            if(!match){
+                return NaN;
+            }
+            return createBjTimestamp(
+                Number(match[1]),
+                Number(match[2]),
+                Number(match[3]),
+                Number(match[4]),
+                Number(match[5]),
+                0
+            );
+        }
+
+        function startOfBjDay(ms){
+            const pseudo = new Date(ms + BJ_OFFSET_MS);
+            return Date.UTC(
+                pseudo.getUTCFullYear(),
+                pseudo.getUTCMonth(),
+                pseudo.getUTCDate(),
+                0, 0, 0, 0
+            ) - BJ_OFFSET_MS;
+        }
+
+        function bjWeekday(ms){
+            return new Date(ms + BJ_OFFSET_MS).getUTCDay();
+        }
+
+        function formatBjDateTime(ms){
+            const pseudo = new Date(ms + BJ_OFFSET_MS);
+            const year = pseudo.getUTCFullYear();
+            const month = String(pseudo.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(pseudo.getUTCDate()).padStart(2, '0');
+            const hour = String(pseudo.getUTCHours()).padStart(2, '0');
+            const minute = String(pseudo.getUTCMinutes()).padStart(2, '0');
+            const second = String(pseudo.getUTCSeconds()).padStart(2, '0');
+            return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+        }
+
+        function formatBjShort(ms){
+            const pseudo = new Date(ms + BJ_OFFSET_MS);
+            const month = pseudo.getUTCMonth() + 1;
+            const day = pseudo.getUTCDate();
+            const hour = String(pseudo.getUTCHours()).padStart(2, '0');
+            const minute = String(pseudo.getUTCMinutes()).padStart(2, '0');
+            const weekday = WEEK_NAMES[pseudo.getUTCDay()];
+            return `${month}月${day}日 ${weekday} ${hour}:${minute}`;
+        }
+
+        function updateNowText(){
+            nowText.textContent = formatBjDateTime(Date.now());
+        }
+
+        function renderMatchedRules(items){
+            if(!items.length){
+                matchList.innerHTML = '';
+                return;
+            }
+            matchList.innerHTML = items.slice(0, 12).map(item => {
+                return `<li>${escapeHtml(item.activityName)} <span class="muted">| ${escapeHtml(item.timeType)} | ${escapeHtml(item.codeName || item.indexName || '-')}</span></li>`;
+            }).join('');
+        }
+
+        function renderOccurrences(groups, nowMs){
+            const occurrences = groups[0] ? groups[0].occurrences : [];
+            resultList.innerHTML = occurrences.length
+                    ? occurrences.map(entry => {
+                        const isActive = entry.startMs <= nowMs && nowMs <= entry.endMs;
+                        const isPast = entry.endMs < nowMs || Boolean(entry.isPast);
+                        const label = entry.item.activityName || entry.item.indexName || entry.item.codeName;
+                        const badge = isActive ? '<span class="tag">当前进行中</span>' : '';
+                        const note = entry.note ? ` | ${escapeHtml(entry.note)}` : '';
+                        const startText = entry.note === '永久开放' ? '长期开放' : escapeHtml(formatBjShort(entry.startMs));
+                        const endText = Number.isFinite(entry.endMs) ? escapeHtml(formatBjDateTime(entry.endMs)) : '长期开放';
+                        return `
+                    <div class="result-item">
+                        <div class="title">${escapeHtml(label)}${badge}</div>
+                        <div class="sub${isPast ? ' past' : ''}">开启时间：${startText}${isPast ? '（已过去）' : ''}</div>
+                        <div class="sub${isPast ? ' past' : ''}">结束时间：${endText}</div>
+                        <div class="sub">解锁条件：${escapeHtml(getUnlockConditionText(entry.item))}${note}</div>
+                    </div>
+                `;
+                    }).join('')
+                    : '<div class="empty">没有可展示的开启日期。</div>';
+        }
+
+        function getUnlockConditionText(item){
+            if(item.joinUnlockTips){
+                return item.joinUnlockTips;
+            }
+
+            const joinText = formatConditionText(item.joinPersonalCondition, item.joinPersonalConditionType, item.joinPersonalConditionValue);
+            if(joinText){
+                return joinText;
+            }
+
+            const displayText = formatConditionText(item.displayPersonalCondition, item.displayPersonalConditionType, item.displayPersonalConditionValue);
+            return displayText || '无';
+        }
+
+        function formatConditionText(condition, type, value){
+            if(!condition && !type && (!value || value === '0')){
+                return '';
+            }
+
+            const typeName = type ? (type.includes('#') ? type.split('#').pop() : type) : '';
+            const normalizedValue = value && value !== '0' ? value : '';
+
+            if(condition === '默认开启'){
+                return '默认开启';
+            }
+
+            if(condition === '建筑' && typeName && normalizedValue){
+                return `${typeName}达到${normalizedValue}级解锁`;
+            }
+
+            if(condition === '系统解锁' && typeName && normalizedValue){
+                return `${typeName}达到${normalizedValue}级解锁`;
+            }
+
+            if(condition === '建筑' && typeName){
+                return `${typeName}解锁`;
+            }
+
+            const parts = [];
+            if(condition){
+                parts.push(condition);
+            }
+            if(typeName){
+                parts.push(typeName);
+            }
+            if(normalizedValue){
+                parts.push(normalizedValue);
+            }
+            return parts.join(' | ');
+        }
+
+        function renderEmpty(text){
+            resultList.innerHTML = `<div class="empty">${escapeHtml(text)}</div>`;
+        }
+
+        function setStatus(text, type){
+            statusBox.className = 'status' + (type ? ' ' + type : '');
+            statusBox.textContent = text;
+        }
+
+        function escapeHtml(text){
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+    </script>
+</body>
+</html>
