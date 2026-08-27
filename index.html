@@ -8,14 +8,7 @@
         *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,Microsoft YaHei}
         body{min-height:100vh;padding:24px;background:linear-gradient(180deg,#0f172a 0%,#111827 45%,#1e293b 100%);color:#e5e7eb}
         .app-shell{max-width:1460px;margin:0 auto;border:1px solid #334155;border-radius:22px;background:#0b1220;box-shadow:0 24px 80px rgba(15,23,42,.45);overflow:hidden}
-        .titlebar{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;padding:24px 28px;border-bottom:1px solid #1e293b;background:linear-gradient(135deg,#111827,#0f172a 60%,#172554)}
-        .title-main h1{font-size:30px;line-height:1.2;color:#f8fafc}
-        .title-main p{margin-top:10px;color:#94a3b8;line-height:1.7}
-        .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:#172554;color:#bfdbfe;font-size:12px;margin-bottom:14px}
-        .eyebrow::before{content:'';width:8px;height:8px;border-radius:50%;background:#38bdf8;box-shadow:0 0 12px rgba(56,189,248,.8)}
-        .title-meta{display:grid;gap:10px;min-width:220px}
-        .meta-chip{padding:12px 14px;border-radius:14px;background:rgba(15,23,42,.78);border:1px solid #334155;color:#cbd5e1;font-size:13px;line-height:1.7}
-        .app-body{display:grid;grid-template-columns:minmax(380px,460px) minmax(0,1fr);gap:0;min-height:calc(100vh - 120px)}
+        .app-body{display:grid;grid-template-columns:minmax(380px,460px) minmax(0,1fr);gap:0;min-height:100vh}
         .sidebar{padding:24px;border-right:1px solid #1e293b;background:#0f172a;display:grid;gap:22px;align-content:start}
         .main{padding:24px;background:#111827;display:grid;gap:22px;align-content:start}
         .card{background:#111c2f;border:1px solid #23314a;border-radius:18px;padding:22px;box-shadow:0 10px 30px rgba(2,6,23,.18)}
@@ -50,15 +43,12 @@
         .match-list{margin-top:12px;padding-left:20px;line-height:1.8;color:#cbd5e1}
         .muted{color:#94a3b8}
         .empty{padding:18px;border:1px dashed #334155;border-radius:14px;color:#94a3b8;background:#0b1220}
-        .panel-note{font-size:13px;line-height:1.7;color:#94a3b8;margin-top:12px}
-        .footer-bar{padding:14px 24px;border-top:1px solid #1e293b;background:#0b1220;color:#64748b;font-size:13px}
         @media (max-width:1080px){
             body{padding:14px}
             .app-body{grid-template-columns:1fr}
             .sidebar{border-right:none;border-bottom:1px solid #1e293b}
         }
         @media (max-width:720px){
-            .titlebar{padding:20px;flex-direction:column}
             .sidebar,.main{padding:16px}
             .card{padding:18px}
         }
@@ -66,18 +56,6 @@
 </head>
 <body>
     <div class="app-shell">
-        <div class="titlebar">
-            <div class="title-main">
-                <div class="eyebrow">Local Standalone Build</div>
-                <h1>活动开启查询客户端</h1>
-                <p>从原站点页面独立拆出，保留本地导入与查询逻辑，后续可以单独维护这个目录，不再依赖对方主页导航和站点结构。</p>
-            </div>
-            <div class="title-meta">
-                <div class="meta-chip">运行方式：直接打开当前目录下的 <code>index.html</code></div>
-                <div class="meta-chip">维护方式：这个目录可单独初始化 Git 仓库，后续只维护这块工具</div>
-            </div>
-        </div>
-
         <div class="app-body">
             <aside class="sidebar">
                 <div class="card">
@@ -118,7 +96,6 @@
                     <div class="btn-row">
                         <button id="queryBtn" type="button">开始查询</button>
                     </div>
-                    <div class="panel-note">这个版本不依赖原站点导航，作为单独客户端页面使用。</div>
                 </div>
 
                 <div class="card">
@@ -155,7 +132,6 @@
             </main>
         </div>
 
-        <div class="footer-bar">Standalone Activity Schedule Client</div>
     </div>
 
     <script>
